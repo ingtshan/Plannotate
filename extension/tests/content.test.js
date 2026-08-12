@@ -3,6 +3,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const { pullContext, viewerQuery } = require("../content.js");
+const { normalizedTag } = require("../sandbox.js");
 
 test("parses single-digit and nested pull request URLs", () => {
   assert.deepEqual(
@@ -26,4 +27,9 @@ test("builds an embedded viewer query without ambient page state", () => {
     viewerQuery({ owner: "octo cat", repo: "plan/review", pull: "7" }),
     "owner=octo+cat&repo=plan%2Freview&pull=7&embedded=1"
   );
+});
+
+test("normalizes HTML and SVG namespace tag names for anchor matching", () => {
+  assert.equal(normalizedTag({ tagName: "svg" }), "SVG");
+  assert.equal(normalizedTag({ tagName: "TR" }), "TR");
 });

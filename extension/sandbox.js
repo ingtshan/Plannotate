@@ -1,6 +1,15 @@
 (function () {
   "use strict";
 
+  function normalizedTag(element) {
+    return String(element && element.tagName || "").toUpperCase();
+  }
+
+  if (typeof module === "object" && module.exports) {
+    module.exports = { normalizedTag };
+    return;
+  }
+
   const channel = new URLSearchParams(location.search).get("channel");
   const BLOCK_SELECTOR = "h1,h2,h3,h4,h5,h6,p,li,pre,blockquote,tr,figcaption,dt,dd,img,svg,canvas";
   const MEDIA = new Set(["IMG", "SVG", "CANVAS"]);
@@ -110,14 +119,15 @@
   }
 
   function mediaDetails(element) {
-    if (element.tagName === "IMG") {
+    const tag = normalizedTag(element);
+    if (tag === "IMG") {
       const source = element.getAttribute("src") || "";
       const alt = element.getAttribute("alt") || "";
       const clean = source.split(/[?#]/, 1)[0];
       const filename = clean.split("/").filter(Boolean).pop() || "";
       return { input: source + "|" + alt, quote: "[图] " + (alt || filename || "img") };
     }
-    if (element.tagName === "SVG") {
+    if (tag === "SVG") {
       return {
         input: element.outerHTML.replace(/\s+/g, " ").slice(0, 512), quote: "[图] svg",
       };
@@ -129,7 +139,7 @@
 
   function scanBlocks(sidecars) {
     const elements = Array.from(planRoot.querySelectorAll(BLOCK_SELECTOR)).filter(
-      (element) => MEDIA.has(element.tagName) || Boolean(normalizeText(element.textContent))
+      (element) => MEDIA.has(normalizedTag(element)) || Boolean(normalizeText(element.textContent))
     );
     if (elements.length !== sidecars.length) {
       throw new Error(
@@ -139,14 +149,15 @@
     state.blockByElement = new WeakMap();
     state.blocks = elements.map((element, index) => {
       const sidecar = sidecars[index];
-      if (sidecar.index !== index || sidecar.tag.toUpperCase() !== element.tagName) {
+      const tag = normalizedTag(element);
+      if (sidecar.index !== index || sidecar.tag.toUpperCase() !== tag) {
         throw new Error("anchor sidecar 在第 " + index + " 个块发生结构漂移");
       }
       const rawText = element.textContent;
       const text = normalizeText(rawText);
-      const media = MEDIA.has(element.tagName) ? mediaDetails(element) : null;
+      const media = MEDIA.has(tag) ? mediaDetails(element) : null;
       const runtimeHash = fnv1a(media ? media.input : text);
-      if (element.tagName !== "SVG" && runtimeHash !== sidecar.block_hash) {
+      if (tag !== "SVG" && runtimeHash !== sidecar.block_hash) {
         throw new Error("anchor sidecar 在第 " + index + " 个块发生内容漂移");
       }
       const block = {
