@@ -44,12 +44,12 @@ python3 scripts/build_extension.py
 The command creates:
 
 ```text
-dist/plannotate-v0.1.1/
-dist/plannotate-v0.1.1.zip
+dist/plannotate-v0.1.2/
+dist/plannotate-v0.1.2.zip
 dist/SHA256SUMS.txt
 ```
 
-Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select the generated `dist/plannotate-v0.1.1` directory. The ZIP contains the same auditable unpacked directory; a self-signed CRX is intentionally not produced.
+Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select the generated `dist/plannotate-v0.1.2` directory. The ZIP contains the same auditable unpacked directory; a self-signed CRX is intentionally not produced.
 
 Open the extension options and save a fine-grained GitHub personal access token limited to the repositories you review:
 

@@ -4,7 +4,7 @@
   const BUTTON_ID = "plannotate-open";
 
   function isPullRequest() {
-    return /^\/[^/]+\/[^/]+\/pull\/[1-9]\d+/.test(location.pathname);
+    return /^\/[^/]+\/[^/]+\/pull\/[1-9]\d*(?:\/|$)/.test(location.pathname);
   }
 
   function syncButton() {
