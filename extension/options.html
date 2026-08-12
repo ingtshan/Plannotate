@@ -3,16 +3,61 @@
 <title>Plannotate 设置</title>
 <link rel="stylesheet" href="viewer.css">
 <main class="settings-shell">
-  <h1>Plannotate</h1>
-  <p>配置一个仅覆盖目标仓库的 fine-grained token。所需权限：Contents read、Pull requests read/write、Metadata read。</p>
-  <form id="settings-form" class="settings-form">
-    <label for="github-token">GitHub token</label>
-    <input id="github-token" name="github-token" type="password" autocomplete="off" required>
-    <label class="checkbox"><input id="show-token" type="checkbox"> 显示 token</label>
-    <button type="submit" class="primary">保存</button>
-    <button id="clear-token" type="button">清除</button>
-  </form>
-  <p id="settings-status" class="status" role="status"></p>
-  <p class="muted">Token 只保存在此 Chrome profile 的扩展存储中，不会写进 plan、评论或仓库。</p>
+  <header class="settings-heading">
+    <p class="eyebrow">PLANNOTATE · GITHUB ACCESS</p>
+    <h1>连接 GitHub</h1>
+    <p>推荐使用只覆盖需要评审仓库的 fine-grained personal access token。</p>
+    <p id="token-target" class="target-chip">尚未从 PR 获取目标仓库</p>
+  </header>
+
+  <section class="settings-card" aria-labelledby="token-guide-title">
+    <div class="settings-card-heading">
+      <div>
+        <span class="step-number">1</span>
+        <h2 id="token-guide-title">创建正确权限的 token</h2>
+      </div>
+      <a id="create-token" class="button-link primary" target="_blank" rel="noreferrer">在 GitHub 创建（已预填权限）</a>
+    </div>
+    <ol class="setup-steps">
+      <li><strong>Resource owner</strong><span id="owner-guidance">选择目标仓库的所有者</span></li>
+      <li><strong>Repository access</strong><span id="repository-guidance">选择 Only select repositories，并加入要评审的仓库</span></li>
+      <li><strong>Repository permissions</strong><span>按下表核对；不需要任何 Account 或 Organization permission</span></li>
+    </ol>
+    <div class="permission-table" role="table" aria-label="Plannotate 最小 GitHub 权限">
+      <div role="row"><strong role="cell">Contents</strong><span role="cell">Read-only</span><span role="cell">读取已提交的 plan HTML、manifest 与 anchors</span></div>
+      <div role="row"><strong role="cell">Pull requests</strong><span role="cell" class="permission-required">Read and write</span><span role="cell">读取、创建、回复、解决 review thread</span></div>
+      <div role="row"><strong role="cell">Metadata</strong><span role="cell">Read-only</span><span role="cell">GitHub 自动附加</span></div>
+    </div>
+    <p class="callout"><strong>最常见的误配：</strong>Pull requests 选成了 Read-only。这样 plan 能打开，但评论、回复和解决会报 “Resource not accessible by personal access token”。</p>
+    <details>
+      <summary>组织仓库、外部协作者或多个 owner</summary>
+      <p>组织可能要求管理员批准或 SSO 授权；pending token 只能读公共资源。一个 fine-grained token 只能绑定一个 resource owner。GitHub 当前还限制外部协作者用 fine-grained token 写入部分仓库，此时才考虑权限范围更大的 classic token。</p>
+    </details>
+  </section>
+
+  <section class="settings-card" aria-labelledby="save-token-title">
+    <div class="settings-card-heading">
+      <div><span class="step-number">2</span><h2 id="save-token-title">保存并检查</h2></div>
+    </div>
+    <form id="settings-form" class="settings-form">
+      <label for="github-token">GitHub token</label>
+      <input id="github-token" name="github-token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…" required>
+      <label class="checkbox"><input id="show-token" type="checkbox"> 显示 token</label>
+      <div class="settings-actions">
+        <button type="submit" class="primary">保存并检查</button>
+        <button id="verify-token" type="button">仅检查</button>
+        <button id="clear-token" type="button">清除</button>
+      </div>
+    </form>
+    <div id="settings-status" class="verification-status" role="status" aria-live="polite"></div>
+    <p class="muted">检查过程不会创建测试评论。GitHub 没有无副作用的写权限探针，因此读取通过后仍需确认 Pull requests 显示为 <strong>Read and write</strong>。</p>
+  </section>
+
+  <aside class="security-note">
+    <strong>本地保存</strong>
+    <span>Token 只保存在当前 ego lite / Chromium profile 的扩展存储中，只发送给 <code>api.github.com</code>，不会进入 plan、评论或仓库。</span>
+  </aside>
 </main>
+<script src="protocol.js"></script>
+<script src="github.js"></script>
 <script src="options.js"></script>

@@ -52,6 +52,49 @@ test("parses PR URLs and discovers only namespaced manifests", () => {
   ]), ["example/demo"]);
 });
 
+test("builds a least-privilege fine-grained token template", () => {
+  const url = new URL(github.tokenTemplateUrl("team-owner"));
+  assert.equal(url.origin + url.pathname,
+    "https://github.com/settings/personal-access-tokens/new");
+  assert.equal(url.searchParams.get("target_name"), "team-owner");
+  assert.equal(url.searchParams.get("contents"), "read");
+  assert.equal(url.searchParams.get("pull_requests"), "write");
+  assert.equal(url.searchParams.get("expires_in"), "90");
+  assert.equal(new URL(github.tokenTemplateUrl("not/an/owner")).searchParams.has(
+    "target_name"
+  ), false);
+});
+
+test("turns PAT denial into repository-specific recovery steps", () => {
+  const error = new Error("Resource not accessible by personal access token");
+  error.status = 403;
+  const help = github.permissionHelp(
+    error, { owner: "team", repo: "plans", number: 7 }
+  );
+  assert.equal(help.title, "当前 token 没有 PR review 写权限");
+  assert.match(help.summary, /team\/plans/);
+  assert.ok(help.steps.some((item) => /Pull requests.*Read and write/.test(item)));
+  assert.equal(new URL(help.tokenUrl).searchParams.get("target_name"), "team");
+  assert.equal(github.permissionHelp(new Error("network failed"), {}), null);
+});
+
+test("preserves HTTP status and accepted permissions on GitHub errors", async () => {
+  const api = new github.GitHubApi("token", {
+    fetchImpl: async () => new Response(JSON.stringify({
+      message: "Resource not accessible by personal access token",
+    }), {
+      status: 403,
+      headers: { "x-accepted-github-permissions": "pull_requests=write" },
+    }),
+  });
+  await assert.rejects(api.getAuthenticatedUser(), (error) => {
+    assert.equal(error.name, "GitHubApiError");
+    assert.equal(error.status, 403);
+    assert.equal(error.acceptedPermissions, "pull_requests=write");
+    return true;
+  });
+});
+
 test("loads a head-pinned bundle and verifies artifact plus sidecar", async () => {
   const fixture = bundleFixture();
   const paths = [];

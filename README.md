@@ -44,19 +44,22 @@ python3 scripts/build_extension.py
 The command creates:
 
 ```text
-dist/plannotate-v0.2.0/
-dist/plannotate-v0.2.0.zip
+dist/plannotate-v0.2.1/
+dist/plannotate-v0.2.1.zip
 dist/SHA256SUMS.txt
 ```
 
-Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select the generated `dist/plannotate-v0.2.0` directory. The ZIP contains the same auditable unpacked directory; a self-signed CRX is intentionally not produced.
+Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select the generated `dist/plannotate-v0.2.1` directory. The ZIP contains the same auditable unpacked directory; a self-signed CRX is intentionally not produced.
 
 Open the extension options and save a fine-grained GitHub personal access token limited to the repositories you review:
 
+- Resource owner: the owner of the repository being reviewed
 - Repository access: only selected repositories
 - Contents: read-only
 - Pull requests: read and write
 - Metadata: read-only (automatically required by GitHub)
+
+The options page links to GitHub's token form with the permissions prefilled and checks identity, repository, PR, and plan read access without creating a test comment. GitHub does not expose a side-effect-free write-permission probe, so verify that **Pull requests** says **Read and write**. Organization-owned repositories may also require administrator approval or SSO authorization. A fine-grained token is limited to one resource owner.
 
 The token stays in `chrome.storage.local`. It is sent only to `https://api.github.com` and is never placed in plan HTML, repository files, comments, or the sandbox frame.
 

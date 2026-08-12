@@ -35,9 +35,12 @@ INSTALL_TEXT = """Plannotate 安装说明
 3. 打开右上角「开发者模式」。
 4. 点击「加载已解压的扩展程序」。
 5. 选择包含 manifest.json 的 plannotate-v{version} 目录。
-6. 打开扩展的「详细信息」→「扩展程序选项」，保存 fine-grained GitHub token。
+6. 打开扩展的「详细信息」→「扩展程序选项」，点击已预填权限的 GitHub 创建链接。
+7. 选择正确的 Resource owner 和目标仓库，生成 token 后粘贴并点击「保存并检查」。
 
 Token 最小仓库权限：Contents read、Pull requests read/write、Metadata read。
+如果 plan 能读取但评论报 403，请把 Pull requests 从 Read-only 改为 Read and write；
+组织仓库还可能需要管理员批准或 SSO 授权。
 随后打开 GitHub PR，选择 PR 导航中的 Plan review。
 """
 

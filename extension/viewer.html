@@ -19,9 +19,13 @@
   </header>
   <p id="status" class="status" role="status">正在初始化…</p>
   <section id="auth-panel" class="auth-panel" hidden>
-    <h2>需要 GitHub token</h2>
-    <p>请配置 Contents read、Pull requests read/write、Metadata read 的 fine-grained token。</p>
-    <button id="auth-settings" type="button" class="primary">打开设置</button>
+    <h2 id="auth-title">需要 GitHub token</h2>
+    <p id="auth-message">请配置用于当前仓库的 fine-grained token。</p>
+    <ul id="auth-steps"></ul>
+    <div class="auth-actions">
+      <a id="auth-create-token" class="button-link" target="_blank" rel="noreferrer">在 GitHub 创建正确权限的 token</a>
+      <button id="auth-settings" type="button" class="primary">打开设置并检查</button>
+    </div>
   </section>
   <section id="carryover-section" class="carryover" hidden>
     <h2>其他版本尚未解决</h2>

@@ -17,6 +17,7 @@
   const MAX_SIDECAR_BYTES = 4 * 1024 * 1024;
   const ANCHOR_ID_PATTERN = /^[A-Za-z0-9._:-]{1,100}$/;
   const BLOCK_HASH_PATTERN = /^[0-9a-f]{8}$/;
+  const OWNER_PATTERN = /^[A-Za-z0-9_.-]+$/;
   const COMMENTABLE_TAGS = new Set([
     "h1", "h2", "h3", "h4", "h5", "h6", "p", "li", "pre",
     "blockquote", "tr", "figcaption", "dt", "dd", "img", "svg", "canvas",
@@ -49,6 +50,55 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
     );
     if (!match) throw new Error("当前页面不是 GitHub pull request");
     return { owner: match[1], repo: match[2], number: Number(match[3]) };
+  }
+
+  function tokenTemplateUrl(owner) {
+    const query = new URLSearchParams({
+      name: "Plannotate review",
+      description: "Read versioned plans and write review threads in GitHub pull requests",
+      expires_in: "90",
+      contents: "read",
+      pull_requests: "write",
+    });
+    if (typeof owner === "string" && OWNER_PATTERN.test(owner)) {
+      query.set("target_name", owner);
+    }
+    return "https://github.com/settings/personal-access-tokens/new?" + query;
+  }
+
+  function permissionHelp(error, ref) {
+    const message = String(error && error.message || error || "");
+    const status = Number(error && error.status) || 0;
+    const repository = ref && ref.owner && ref.repo
+      ? ref.owner + "/" + ref.repo : "目标仓库";
+    const owner = ref && ref.owner ? ref.owner : "仓库所有者";
+    const invalid = status === 401 || /bad credentials|requires authentication/i.test(message);
+    const denied = status === 403
+      || /resource not accessible by personal access token|saml|forbidden/i.test(message);
+    if (!invalid && !denied) return null;
+    if (invalid) {
+      return {
+        title: "GitHub token 无效或已过期",
+        summary: "GitHub 拒绝了当前 token。请重新创建并保存一个 fine-grained token。",
+        steps: [
+          "Resource owner：" + owner,
+          "Repository access：包含 " + repository,
+          "Repository permissions：Contents = Read-only；Pull requests = Read and write",
+        ],
+        tokenUrl: tokenTemplateUrl(ref && ref.owner),
+      };
+    }
+    return {
+      title: "当前 token 没有 PR review 写权限",
+      summary: "它可能能读取 plan，但不能在 " + repository + " 回复、解决或创建 review thread。",
+      steps: [
+        "Resource owner 必须选择 " + owner,
+        "Repository access 必须包含 " + repository,
+        "Repository permissions 中 Pull requests 必须是 Read and write，不是 Read-only",
+        "组织仓库还要确认 token 已获管理员批准；启用 SSO 时需完成授权",
+      ],
+      tokenUrl: tokenTemplateUrl(ref && ref.owner),
+    };
   }
 
   function validPlanKey(value) {
@@ -205,7 +255,12 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
       if (!response.ok) {
         let message = await response.text();
         try { message = JSON.parse(message).message || message; } catch (_error) { /* text */ }
-        throw new Error("GitHub HTTP " + response.status + ": " + message);
+        const error = new Error("GitHub HTTP " + response.status + ": " + message);
+        error.name = "GitHubApiError";
+        error.status = response.status;
+        error.apiMessage = message;
+        error.acceptedPermissions = response.headers.get("x-accepted-github-permissions") || "";
+        throw error;
       }
       return response;
     }
@@ -226,7 +281,13 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
       }
       if (!response.ok) throw new Error("GitHub GraphQL HTTP " + response.status);
       if (payload.errors) {
-        throw new Error(payload.errors.map((item) => item.message).join("; "));
+        const error = new Error(payload.errors.map((item) => item.message).join("; "));
+        error.name = "GitHubGraphqlError";
+        error.status = payload.errors.some(
+          (item) => /resource not accessible|forbidden/i.test(item.message || "")
+        ) ? 403 : 0;
+        error.graphqlErrors = payload.errors;
+        throw error;
       }
       return payload.data;
     }
@@ -236,6 +297,12 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
     }
 
     async getPull(ref) { return this.json("GET", this.pullPath(ref)); }
+
+    async getAuthenticatedUser() { return this.json("GET", "/user"); }
+
+    async getRepository(ref) {
+      return this.json("GET", "/repos/" + ref.owner + "/" + ref.repo);
+    }
 
     async listPullFiles(ref) {
       const result = [];
@@ -425,7 +492,9 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
     loadBundle,
     normalizeThreads,
     parsePullUrl,
+    permissionHelp,
     sha256,
+    tokenTemplateUrl,
     validateAnchors,
     validateManifest,
     validPlanKey,
