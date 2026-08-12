@@ -43,10 +43,12 @@ The extension manifest requests only local extension storage and access to `http
 A fine-grained token should grant the minimum repository permissions:
 
 - Contents: read-only, for manifests and artifacts;
-- Pull requests: read and write, for review threads;
+- Pull requests: read and write, for reading, creating, replying to, and deleting review comments;
 - Metadata: read-only, as required by GitHub.
 
 The token remains in `chrome.storage.local`. The plan sandbox cannot read extension storage or make GitHub requests.
+
+GitHub may reject the GraphQL thread-state mutations for a fine-grained PAT even when review-comment writes succeed. The extension detects fine-grained tokens by their documented prefix and routes resolve/reopen to the exact native GitHub discussion URL. The GitHub content script validates that the target is the current repository and pull request before navigating. Classic or OAuth tokens may use the GraphQL mutations directly; their API errors still fall back to the native thread.
 
 The CLI reads `GITHUB_TOKEN`, `GH_TOKEN`, or `gh auth token` at invocation time. Tokens are never accepted as command-line arguments, written to disk, or included in output.
 

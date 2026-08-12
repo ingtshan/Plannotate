@@ -83,7 +83,10 @@ async function verifyToken(token) {
         }
       }
     }
-    checks.push("请在 GitHub token 页面再次确认 Pull requests = Read and write");
+    checks.push("评论创建/回复需要 Pull requests = Read and write");
+    if (api.tokenKind === "fine-grained") {
+      checks.push("解决/重新打开将使用当前 PR 的 GitHub 原生 review（无需扩大 token 权限）");
+    }
     renderStatus("success", "读取检查通过", checks);
     return true;
   } catch (error) {

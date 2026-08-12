@@ -52,6 +52,7 @@ body { padding: 0; color: #1f2328; background: #fff; }
 .prg-thread-actions { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--prg-border); }
 .prg-thread-actions textarea { min-width: 180px; flex: 1; min-height: 34px; resize: vertical; border: 1px solid var(--prg-border); border-radius: 6px; padding: 6px 8px; font: inherit; }
 .prg-thread-error { padding: 7px 10px; color: #cf222e; border-top: 1px solid #ff818266; background: #ffebe9; font-size: 12px; }
+.prg-thread-error button { margin-left: 8px; color: inherit; border-color: currentColor; background: transparent; }
 .prg-stale { color: #9a6700; font-size: 12px; }
 mark.prg-selection-mark { padding: 0; color: inherit; background: #fff8c5; cursor: pointer; }
 #prg-composer { position: fixed; right: 18px; bottom: 18px; z-index: 2147483647; width: min(420px, calc(100vw - 36px)); overflow: hidden; border: 1px solid var(--prg-border); border-radius: 8px; background: #fff; box-shadow: 0 12px 36px rgba(31,35,40,.24); }

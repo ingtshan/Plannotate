@@ -66,7 +66,14 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
     return "https://github.com/settings/personal-access-tokens/new?" + query;
   }
 
-  function permissionHelp(error, ref) {
+  function tokenKind(value) {
+    const token = String(value || "");
+    if (token.startsWith("github_pat_")) return "fine-grained";
+    if (/^gh[pousr]_/.test(token)) return "classic-or-oauth";
+    return "unknown";
+  }
+
+  function permissionHelp(error, ref, action) {
     const message = String(error && error.message || error || "");
     const status = Number(error && error.status) || 0;
     const repository = ref && ref.owner && ref.repo
@@ -88,9 +95,21 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
         tokenUrl: tokenTemplateUrl(ref && ref.owner),
       };
     }
+    if (action === "resolve" || action === "reopen") {
+      return {
+        title: "GitHub 拒绝 thread 状态变更",
+        summary: "GitHub 拒绝了本次 GraphQL 解决/重新打开操作；重新创建相同的 fine-grained token 通常不会修复。",
+        steps: [
+          "使用 GitHub 原生 review 完成解决或重新打开",
+          "当前推荐的 fine-grained token 仍可继续用于 plan 读取、评论创建与回复",
+          "只有必须从 CLI 自动改变状态时，才考虑权限范围更大的 classic PAT",
+        ],
+        nativeFallback: true,
+      };
+    }
     return {
-      title: "当前 token 没有 PR review 写权限",
-      summary: "它可能能读取 plan，但不能在 " + repository + " 回复、解决或创建 review thread。",
+      title: "当前 token 没有 PR review 评论权限",
+      summary: "它可能能读取 plan，但不能在 " + repository + " 创建或回复 review thread。",
       steps: [
         "Resource owner 必须选择 " + owner,
         "Repository access 必须包含 " + repository,
@@ -230,6 +249,7 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
       const config = options || {};
       if (!token) throw new Error("请先配置 GitHub token");
       this.token = token;
+      this.tokenKind = tokenKind(token);
       this.apiUrl = (config.apiUrl || "https://api.github.com").replace(/\/$/, "");
       this.graphqlUrl = config.graphqlUrl || "https://api.github.com/graphql";
       this.fetch = config.fetchImpl || fetch.bind(globalThis);
@@ -393,10 +413,13 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
       );
     }
 
-    async deleteComment(commentId) {
-      return this.graphql(
-        "mutation Delete($comment:ID!){deletePullRequestReviewComment(input:{id:$comment}){clientMutationId}}",
-        { comment: commentId }
+    async deleteComment(ref, commentId) {
+      if (!Number.isInteger(commentId) || commentId < 1) {
+        throw new Error("comment id 非法");
+      }
+      return this.request(
+        "DELETE", "/repos/" + ref.owner + "/" + ref.repo
+          + "/pulls/comments/" + commentId
       );
     }
   }
@@ -494,6 +517,7 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
     parsePullUrl,
     permissionHelp,
     sha256,
+    tokenKind,
     tokenTemplateUrl,
     validateAnchors,
     validateManifest,

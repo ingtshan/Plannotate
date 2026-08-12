@@ -358,14 +358,22 @@
       actions.append(input, replyButton);
     }
     if (!record.isResolved && record.permissions.resolve) {
-      actions.appendChild(actionButton("解决", () => post(
-        "resolve", { threadId: record.threadId }
-      )));
+      actions.appendChild(actionButton(
+        record.nativeThreadState ? "前往 GitHub 解决" : "解决",
+        () => post(
+          record.nativeThreadState ? "open-native-thread" : "resolve",
+          { threadId: record.threadId }
+        )
+      ));
     }
     if (record.isResolved && record.permissions.reopen) {
-      actions.appendChild(actionButton("重开", () => post(
-        "reopen", { threadId: record.threadId }
-      )));
+      actions.appendChild(actionButton(
+        record.nativeThreadState ? "前往 GitHub 重开" : "重开",
+        () => post(
+          record.nativeThreadState ? "open-native-thread" : "reopen",
+          { threadId: record.threadId }
+        )
+      ));
     }
     if (record.permissions.delete) {
       actions.appendChild(actionButton("删除", () => {
@@ -395,7 +403,7 @@
     if (element) element.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
-  function showThreadError(threadId, message) {
+  function showThreadError(threadId, message, nativeFallback) {
     const card = document.getElementById("prg-thread-" + threadId);
     if (!card) return showError(message);
     let error = card.querySelector(".prg-thread-error");
@@ -403,7 +411,12 @@
       error = textElement("div", "prg-thread-error", "");
       card.appendChild(error);
     }
-    error.textContent = message;
+    error.replaceChildren(document.createTextNode(message));
+    if (nativeFallback) {
+      error.appendChild(actionButton("在 GitHub 打开此线程", () => post(
+        "open-native-thread", { threadId }
+      )));
+    }
     card.querySelectorAll("textarea,button").forEach((control) => {
       control.disabled = false;
     });
@@ -546,7 +559,10 @@
     if (event.source !== parent || message.source !== "plannotate-parent"
         || message.channel !== channel) return;
     if (message.type === "mutation-error") {
-      showThreadError(message.threadId, message.message || "GitHub 操作失败");
+      showThreadError(
+        message.threadId, message.message || "GitHub 操作失败",
+        Boolean(message.nativeFallback)
+      );
       return;
     }
     if (message.type === "compose-error") {

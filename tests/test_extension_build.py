@@ -20,7 +20,7 @@ class ExtensionBuildTests(unittest.TestCase):
             )
 
             self.assertEqual(result.returncode, 0, result.stderr)
-            release = os.path.join(output, "plannotate-v0.2.1")
+            release = os.path.join(output, "plannotate-v0.2.2")
             archive_path = release + ".zip"
             with open(os.path.join(release, "manifest.json"), encoding="utf-8") as source:
                 manifest = json.load(source)
@@ -29,7 +29,7 @@ class ExtensionBuildTests(unittest.TestCase):
                 bad = [name for name in names if "/tests/" in name or name.endswith(".test.js")]
             self.assertEqual(manifest["manifest_version"], 3)
             self.assertFalse(bad)
-            self.assertIn("plannotate-v0.2.1/INSTALL.txt", names)
+            self.assertIn("plannotate-v0.2.2/INSTALL.txt", names)
             self.assertTrue(os.path.isfile(os.path.join(output, "SHA256SUMS.txt")))
 
 

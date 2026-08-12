@@ -25,13 +25,13 @@
     </ol>
     <div class="permission-table" role="table" aria-label="Plannotate 最小 GitHub 权限">
       <div role="row"><strong role="cell">Contents</strong><span role="cell">Read-only</span><span role="cell">读取已提交的 plan HTML、manifest 与 anchors</span></div>
-      <div role="row"><strong role="cell">Pull requests</strong><span role="cell" class="permission-required">Read and write</span><span role="cell">读取、创建、回复、解决 review thread</span></div>
+      <div role="row"><strong role="cell">Pull requests</strong><span role="cell" class="permission-required">Read and write</span><span role="cell">读取、创建和回复 review thread</span></div>
       <div role="row"><strong role="cell">Metadata</strong><span role="cell">Read-only</span><span role="cell">GitHub 自动附加</span></div>
     </div>
-    <p class="callout"><strong>最常见的误配：</strong>Pull requests 选成了 Read-only。这样 plan 能打开，但评论、回复和解决会报 “Resource not accessible by personal access token”。</p>
+    <p class="callout"><strong>状态变更说明：</strong>GitHub 可能拒绝 fine-grained PAT 调用 GraphQL 的解决/重新打开接口，即使 Pull requests 已是 Read and write。Plannotate 会把这两个操作交回当前 PR 的 GitHub 原生 review，不需要扩大 token 权限；若网页尚未登录，GitHub 会先要求登录。</p>
     <details>
       <summary>组织仓库、外部协作者或多个 owner</summary>
-      <p>组织可能要求管理员批准或 SSO 授权；pending token 只能读公共资源。一个 fine-grained token 只能绑定一个 resource owner。GitHub 当前还限制外部协作者用 fine-grained token 写入部分仓库，此时才考虑权限范围更大的 classic token。</p>
+      <p>组织可能要求管理员批准或 SSO 授权；pending token 只能读公共资源。一个 fine-grained token 只能绑定一个 resource owner。外部协作者还可能受 fine-grained token 限制。只有必须由 CLI 自动解决/重开 thread 时，才考虑权限范围更大的 classic token：公共仓库使用 <code>public_repo</code>，私有仓库使用 <code>repo</code>。</p>
     </details>
   </section>
 
@@ -50,7 +50,7 @@
       </div>
     </form>
     <div id="settings-status" class="verification-status" role="status" aria-live="polite"></div>
-    <p class="muted">检查过程不会创建测试评论。GitHub 没有无副作用的写权限探针，因此读取通过后仍需确认 Pull requests 显示为 <strong>Read and write</strong>。</p>
+    <p class="muted">检查过程不会创建测试评论。读取通过后仍需确认 Pull requests 显示为 <strong>Read and write</strong>；fine-grained PAT 的解决/重开会安全地转到 GitHub 原生 review。</p>
   </section>
 
   <aside class="security-note">

@@ -2,7 +2,7 @@
 
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const { pullContext, viewerQuery } = require("../content.js");
+const { nativeThreadUrl, pullContext, viewerQuery } = require("../content.js");
 const { normalizedTag } = require("../sandbox.js");
 
 test("parses single-digit and nested pull request URLs", () => {
@@ -27,6 +27,25 @@ test("builds an embedded viewer query without ambient page state", () => {
     viewerQuery({ owner: "octo cat", repo: "plan/review", pull: "7" }),
     "owner=octo+cat&repo=plan%2Freview&pull=7&embedded=1"
   );
+});
+
+test("accepts only native discussion links from the current pull request", () => {
+  const context = { owner: "owner", repo: "repository", pull: "7" };
+  assert.equal(
+    nativeThreadUrl(
+      "https://github.com/owner/repository/pull/7#discussion_r123", context
+    ),
+    "https://github.com/owner/repository/pull/7#discussion_r123"
+  );
+  assert.equal(nativeThreadUrl(
+    "https://github.com/owner/other/pull/7#discussion_r123", context
+  ), null);
+  assert.equal(nativeThreadUrl(
+    "https://example.com/owner/repository/pull/7#discussion_r123", context
+  ), null);
+  assert.equal(nativeThreadUrl(
+    "https://github.com/owner/repository/pull/7/files", context
+  ), null);
 });
 
 test("normalizes HTML and SVG namespace tag names for anchor matching", () => {

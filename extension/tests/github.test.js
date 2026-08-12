@@ -71,11 +71,32 @@ test("turns PAT denial into repository-specific recovery steps", () => {
   const help = github.permissionHelp(
     error, { owner: "team", repo: "plans", number: 7 }
   );
-  assert.equal(help.title, "当前 token 没有 PR review 写权限");
+  assert.equal(help.title, "当前 token 没有 PR review 评论权限");
   assert.match(help.summary, /team\/plans/);
   assert.ok(help.steps.some((item) => /Pull requests.*Read and write/.test(item)));
   assert.equal(new URL(help.tokenUrl).searchParams.get("target_name"), "team");
   assert.equal(github.permissionHelp(new Error("network failed"), {}), null);
+});
+
+test("routes denied thread state mutations to native GitHub review", () => {
+  const error = new Error("Resource not accessible by personal access token");
+  error.status = 403;
+  const help = github.permissionHelp(
+    error, { owner: "team", repo: "plans", number: 7 }, "resolve"
+  );
+  assert.equal(help.title, "GitHub 拒绝 thread 状态变更");
+  assert.equal(help.nativeFallback, true);
+  assert.equal(help.tokenUrl, undefined);
+  assert.ok(help.steps.some((item) => /GitHub 原生 review/.test(item)));
+});
+
+test("classifies token families without exposing token contents", () => {
+  assert.equal(github.tokenKind("github_pat_example"), "fine-grained");
+  assert.equal(github.tokenKind("ghp_example"), "classic-or-oauth");
+  assert.equal(github.tokenKind("opaque-token"), "unknown");
+  assert.equal(new github.GitHubApi("github_pat_example", {
+    fetchImpl: async () => new Response(),
+  }).tokenKind, "fine-grained");
 });
 
 test("preserves HTTP status and accepted permissions on GitHub errors", async () => {
@@ -145,6 +166,25 @@ test("creates exact GitHub line and file review payloads", async () => {
     line: 3, side: "RIGHT",
   });
   assert.equal(JSON.parse(calls[1].options.body).subject_type, "file");
+});
+
+test("deletes a review comment through the fine-grained REST endpoint", async () => {
+  const calls = [];
+  const api = new github.GitHubApi("github_pat_example", {
+    apiUrl: "https://api.github.test",
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      return new Response(null, { status: 204 });
+    },
+  });
+  await api.deleteComment({ owner: "team", repo: "repo", number: 9 }, 123);
+  assert.equal(calls[0].url,
+    "https://api.github.test/repos/team/repo/pulls/comments/123");
+  assert.equal(calls[0].options.method, "DELETE");
+  await assert.rejects(
+    api.deleteComment({ owner: "team", repo: "repo", number: 9 }, "PRRC_1"),
+    /comment id/
+  );
 });
 
 test("normalizes only matching path-bound protocol threads", () => {
