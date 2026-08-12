@@ -62,6 +62,7 @@ mark.prg-selection-mark { padding: 0; color: inherit; background: #fff8c5; curso
 #prg-composer-quote { margin: 10px 12px 6px; color: var(--prg-muted); font-size: 12px; }
 #prg-composer textarea { width: calc(100% - 24px); margin: 6px 12px 10px; padding: 9px; resize: vertical; border: 1px solid var(--prg-border); border-radius: 6px; font: inherit; }
 #prg-composer-error { min-height: 0; margin: 0 12px 8px; color: #cf222e; font-size: 12px; }
+#prg-composer-error button { margin: 6px 0 0; color: inherit; border-color: currentColor; background: transparent; }
 #prg-composer-close { border: 0 !important; background: transparent !important; font-size: 18px !important; }
 
 @media (max-width: 980px) {

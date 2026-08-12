@@ -5,6 +5,7 @@
   const WORKSPACE_ID = "plannotate-review-workspace";
   const FRAME_ID = "plannotate-review-frame";
   const STYLE_ID = "plannotate-review-style";
+  const OWNER_PATTERN = /^[A-Za-z0-9_.-]+$/;
   const state = {
     contextKey: null,
     nativeContent: null,
@@ -54,8 +55,16 @@
     return url.href;
   }
 
+  function pendingReviewUrl(context) {
+    if (!context || !OWNER_PATTERN.test(String(context.owner || ""))
+        || !OWNER_PATTERN.test(String(context.repo || ""))
+        || !/^[1-9]\d*$/.test(String(context.pull || ""))) return null;
+    return "https://github.com/" + context.owner + "/" + context.repo
+      + "/pull/" + context.pull + "/files";
+  }
+
   if (typeof module === "object" && module.exports) {
-    module.exports = { nativeThreadUrl, pullContext, viewerQuery };
+    module.exports = { nativeThreadUrl, pendingReviewUrl, pullContext, viewerQuery };
   }
   if (typeof document === "undefined" || typeof chrome === "undefined") return;
 
@@ -262,6 +271,10 @@
       if (!target) return;
       closeWorkspace();
       location.assign(target);
+    }
+    if (message.type === "open-pending-review") {
+      const target = pendingReviewUrl(pullContext(location.href));
+      if (target) chrome.runtime.sendMessage({ type: "open-pending-review", url: target });
     }
   });
 

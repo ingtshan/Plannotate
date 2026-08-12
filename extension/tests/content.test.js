@@ -2,7 +2,10 @@
 
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const { nativeThreadUrl, pullContext, viewerQuery } = require("../content.js");
+const {
+  nativeThreadUrl, pendingReviewUrl, pullContext, viewerQuery,
+} = require("../content.js");
+const { pendingReviewUrl: validatedPendingReviewUrl } = require("../background.js");
 const { normalizedTag } = require("../sandbox.js");
 
 test("parses single-digit and nested pull request URLs", () => {
@@ -45,6 +48,21 @@ test("accepts only native discussion links from the current pull request", () =>
   ), null);
   assert.equal(nativeThreadUrl(
     "https://github.com/owner/repository/pull/7/files", context
+  ), null);
+});
+
+test("builds the native pending-review destination from trusted PR context", () => {
+  assert.equal(
+    pendingReviewUrl({ owner: "owner", repo: "repository", pull: "7" }),
+    "https://github.com/owner/repository/pull/7/files"
+  );
+  assert.equal(pendingReviewUrl({ owner: "owner/x", repo: "repo", pull: "7" }), null);
+  assert.equal(
+    validatedPendingReviewUrl("https://github.com/owner/repository/pull/7/files"),
+    "https://github.com/owner/repository/pull/7/files"
+  );
+  assert.equal(validatedPendingReviewUrl(
+    "https://github.com/owner/repository/pull/7/files?redirect=https://example.com"
   ), null);
 });
 

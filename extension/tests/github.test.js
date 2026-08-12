@@ -116,6 +116,32 @@ test("preserves HTTP status and accepted permissions on GitHub errors", async ()
   });
 });
 
+test("turns an existing pending review conflict into actionable recovery", async () => {
+  const details = [{
+    resource: "PullRequestReview", code: "custom", field: "user_id",
+    message: "user_id can only have one pending review per pull request",
+  }];
+  const api = new github.GitHubApi("github_pat_example", {
+    fetchImpl: async () => new Response(JSON.stringify({
+      message: "Validation Failed", errors: details,
+    }), {
+      status: 422, headers: { "content-type": "application/json" },
+    }),
+  });
+  const ref = { owner: "team", repo: "plans", number: 7 };
+  await assert.rejects(api.createReviewComment(ref, {
+    body: "draft", commitSha: "head", path: ".plannotate/a/b/v0001.html",
+    line: 3, fileLevel: false,
+  }), (error) => {
+    assert.deepEqual(error.apiErrors, details);
+    const help = github.errorHelp(error, ref, "create");
+    assert.equal(help.title, "GitHub 已有未提交的 review");
+    assert.equal(help.pendingReview, true);
+    assert.match(help.summary, /评论草稿已保留/);
+    return true;
+  });
+});
+
 test("loads a head-pinned bundle and verifies artifact plus sidecar", async () => {
   const fixture = bundleFixture();
   const paths = [];

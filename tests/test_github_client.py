@@ -181,6 +181,26 @@ class GitHubClientTests(unittest.TestCase):
         with self.assertRaisesRegex(GitHubError, "denied"):
             client.graphql("query { viewer { login } }", {})
 
+    def test_pending_review_conflict_has_actionable_guidance(self):
+        payload = json.dumps({
+            "message": "Validation Failed",
+            "errors": [{
+                "resource": "PullRequestReview", "code": "custom",
+                "field": "user_id",
+                "message": "user_id can only have one pending review per pull request",
+            }],
+        }).encode("utf-8")
+        client = GitHubClient(
+            "token", transport=RecordingTransport([(422, {}, payload)])
+        )
+        with self.assertRaisesRegex(
+            GitHubError, "submit or dismiss the existing pending review"
+        ):
+            client.create_review_comment(
+                PullRef("team", "repo", 7), "head",
+                ".plannotate/a/b/v0001.html", "body", line=3,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

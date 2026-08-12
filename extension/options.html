@@ -29,6 +29,7 @@
       <div role="row"><strong role="cell">Metadata</strong><span role="cell">Read-only</span><span role="cell">GitHub 自动附加</span></div>
     </div>
     <p class="callout"><strong>状态变更说明：</strong>GitHub 可能拒绝 fine-grained PAT 调用 GraphQL 的解决/重新打开接口，即使 Pull requests 已是 Read and write。Plannotate 会把这两个操作交回当前 PR 的 GitHub 原生 review，不需要扩大 token 权限；若网页尚未登录，GitHub 会先要求登录。</p>
+    <p class="callout"><strong>未提交 review：</strong>同一账号在一个 PR 只能有一个 pending review。如果 Files changed 中已有草稿 review，Plannotate 会保留评论输入，并引导你先提交或取消该 review。</p>
     <details>
       <summary>组织仓库、外部协作者或多个 owner</summary>
       <p>组织可能要求管理员批准或 SSO 授权；pending token 只能读公共资源。一个 fine-grained token 只能绑定一个 resource owner。外部协作者还可能受 fine-grained token 限制。只有必须由 CLI 自动解决/重开 thread 时，才考虑权限范围更大的 classic token：公共仓库使用 <code>public_repo</code>，私有仓库使用 <code>repo</code>。</p>

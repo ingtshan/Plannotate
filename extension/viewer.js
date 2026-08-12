@@ -51,10 +51,10 @@
     elements.authPanel.hidden = true;
   }
 
-  function reportError(error, action) {
-    const help = github.permissionHelp(error, ref, action);
+  function reportError(error, action, knownHelp) {
+    const help = knownHelp || github.errorHelp(error, ref, action);
     if (help) {
-      if (help.nativeFallback) hideAuthHelp();
+      if (help.nativeFallback || help.pendingReview) hideAuthHelp();
       else showAuthHelp(help);
       setStatus(help.summary, true);
       return help.summary;
@@ -300,7 +300,10 @@
       });
       await refreshThreads();
     } catch (error) {
-      sendSandboxComposerError(reportError(error));
+      const help = github.errorHelp(error, ref, "create");
+      sendSandboxComposerError(
+        reportError(error, "create", help), Boolean(help && help.pendingReview)
+      );
     }
   }
 
@@ -317,7 +320,7 @@
       }
       await refreshThreads();
     } catch (error) {
-      const help = github.permissionHelp(error, ref, action);
+      const help = github.errorHelp(error, ref, action);
       const message = reportError(error, action);
       if (notifySandbox) sendSandboxMutationError(
         record.threadId, message, Boolean(help && help.nativeFallback)
@@ -342,10 +345,11 @@
     }, "*");
   }
 
-  function sendSandboxComposerError(message) {
+  function sendSandboxComposerError(message, pendingReview) {
     if (!state.sandboxReady) return;
     elements.iframe.contentWindow.postMessage({
       source: "plannotate-parent", channel, type: "compose-error", message,
+      pendingReview: Boolean(pendingReview),
     }, "*");
   }
 
@@ -368,6 +372,16 @@
     } else if (message.type === "open-native-thread") {
       const record = findRecord(message.threadId);
       if (record) openNativeThread(record);
+    } else if (message.type === "open-pending-review") {
+      if (query.get("embedded") === "1") {
+        parent.postMessage({ source: "plannotate-viewer", type: message.type }, "*");
+      } else {
+        window.open(
+          "https://github.com/" + ref.owner + "/" + ref.repo + "/pull/"
+            + ref.number + "/files",
+          "_blank", "noopener"
+        );
+      }
     } else if (["resolve", "reopen", "delete"].includes(message.type)) {
       const record = findRecord(message.threadId);
       if (record) mutateThread(message.type, record, true);

@@ -289,8 +289,18 @@ def _api_error(status, raw):
     try:
         payload = json.loads(raw.decode("utf-8"))
         message = payload.get("message", raw.decode("utf-8", "replace"))
+        details = payload.get("errors")
     except (UnicodeDecodeError, json.JSONDecodeError):
         message = raw.decode("utf-8", "replace")
+        details = None
+    if isinstance(details, list) and any(
+        "one pending review per pull request" in str(item.get("message", "")).lower()
+        for item in details if isinstance(item, dict)
+    ):
+        return (
+            "GitHub API HTTP {0}: an existing pending review blocks new comments; "
+            "submit or dismiss the existing pending review, then retry"
+        ).format(status)
     return "GitHub API HTTP {0}: {1}".format(status, message)
 
 

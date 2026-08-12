@@ -120,6 +120,30 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
     };
   }
 
+  function pendingReviewHelp(error) {
+    const details = [].concat(
+      error && error.apiErrors || [], error && error.graphqlErrors || []
+    );
+    const conflict = details.some((item) => /one pending review per pull request/i.test(
+      String(item && item.message || item || "")
+    ));
+    if (!conflict) return null;
+    return {
+      title: "GitHub 已有未提交的 review",
+      summary: "同一账号在一个 PR 只能有一个 pending review；你的 Plannotate 评论草稿已保留。",
+      steps: [
+        "在 Files changed 中打开 Review changes",
+        "提交或取消已有的 pending review",
+        "回到 Plan review，再次点击发表评论",
+      ],
+      pendingReview: true,
+    };
+  }
+
+  function errorHelp(error, ref, action) {
+    return pendingReviewHelp(error) || permissionHelp(error, ref, action);
+  }
+
   function validPlanKey(value) {
     if (typeof value !== "string" || !PLAN_KEY_PATTERN.test(value)) return false;
     return value.split("/").every((segment) => segment !== "." && segment !== "..");
@@ -273,12 +297,16 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
       const url = path.startsWith("http") ? path : this.apiUrl + path;
       const response = await this.fetch(url, options);
       if (!response.ok) {
-        let message = await response.text();
-        try { message = JSON.parse(message).message || message; } catch (_error) { /* text */ }
+        const raw = await response.text();
+        let payload = null;
+        try { payload = JSON.parse(raw); } catch (_error) { /* text */ }
+        const message = payload && payload.message || raw;
         const error = new Error("GitHub HTTP " + response.status + ": " + message);
         error.name = "GitHubApiError";
         error.status = response.status;
         error.apiMessage = message;
+        error.apiErrors = payload && Array.isArray(payload.errors) ? payload.errors : [];
+        error.documentationUrl = payload && payload.documentation_url || "";
         error.acceptedPermissions = response.headers.get("x-accepted-github-permissions") || "";
         throw error;
       }
@@ -512,6 +540,7 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
   return Object.freeze({
     GitHubApi,
     discoverPlanKeys,
+    errorHelp,
     loadBundle,
     normalizeThreads,
     parsePullUrl,

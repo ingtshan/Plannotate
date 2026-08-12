@@ -44,7 +44,7 @@ function renderStatus(kind, title, items) {
 }
 
 function renderError(error) {
-  const help = github.permissionHelp(error, currentContext);
+  const help = github.errorHelp(error, currentContext);
   if (help) {
     renderStatus("error", help.title, [help.summary].concat(help.steps));
     return;

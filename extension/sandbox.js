@@ -541,6 +541,16 @@
     composerError.textContent = "";
   }
 
+  function showComposerError(message, pendingReview) {
+    composerError.replaceChildren(document.createTextNode(message));
+    if (pendingReview) {
+      composerError.appendChild(actionButton(
+        "新标签页处理未提交 review",
+        () => post("open-pending-review")
+      ));
+    }
+  }
+
   document.getElementById("prg-composer-submit").addEventListener("click", () => {
     if (!state.composerRequest || !composerBody.value.trim()) return;
     post("comment", {
@@ -566,7 +576,9 @@
       return;
     }
     if (message.type === "compose-error") {
-      composerError.textContent = message.message || "GitHub 操作失败";
+      showComposerError(
+        message.message || "GitHub 操作失败", Boolean(message.pendingReview)
+      );
       composerBody.disabled = false;
       document.getElementById("prg-composer-submit").disabled = false;
       return;
