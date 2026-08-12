@@ -99,7 +99,7 @@ test("creates exact GitHub line and file review payloads", async () => {
   });
   assert.deepEqual(JSON.parse(calls[0].options.body), {
     body: "line", commit_id: "head", path: ".plannotate/a/b/v0001.html",
-    subject_type: "line", line: 3, side: "RIGHT",
+    line: 3, side: "RIGHT",
   });
   assert.equal(JSON.parse(calls[1].options.body).subject_type, "file");
 });

@@ -93,7 +93,7 @@ class GitHubClientTests(unittest.TestCase):
         file_payload = json.loads(transport.calls[1][3].decode("utf-8"))
         self.assertEqual(line_payload["line"], 9)
         self.assertEqual(line_payload["side"], "RIGHT")
-        self.assertEqual(line_payload["subject_type"], "line")
+        self.assertNotIn("subject_type", line_payload)
         self.assertEqual(file_payload["subject_type"], "file")
         self.assertNotIn("line", file_payload)
 

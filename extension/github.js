@@ -294,9 +294,9 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
         body: commentText(payload.body, 65536),
         commit_id: payload.commitSha,
         path: payload.path,
-        subject_type: payload.fileLevel ? "file" : "line",
       };
-      if (!payload.fileLevel) Object.assign(body, { line: payload.line, side: "RIGHT" });
+      if (payload.fileLevel) body.subject_type = "file";
+      else Object.assign(body, { line: payload.line, side: "RIGHT" });
       return this.json("POST", this.pullPath(ref) + "/comments", body);
     }
 

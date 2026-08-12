@@ -129,7 +129,7 @@ class GitHubClient:
         return {
             "Accept": accept,
             "Authorization": "Bearer " + self.token,
-            "User-Agent": "plannotate/0.1",
+            "User-Agent": "plannotate/0.1.1",
             "X-GitHub-Api-Version": API_VERSION,
         }
 
@@ -242,7 +242,7 @@ class GitHubClient:
         else:
             if not isinstance(line, int) or isinstance(line, bool) or line < 1:
                 raise GitHubError("line comment requires a positive line")
-            payload.update({"line": line, "side": "RIGHT", "subject_type": "line"})
+            payload.update({"line": line, "side": "RIGHT"})
         return self._json("POST", _pull_path(reference) + "/comments", payload)
 
     def reply_thread(self, thread_id, body):
