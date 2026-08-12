@@ -37,18 +37,9 @@ a { color: var(--accent); }
 .carryover-card { margin: 8px 0; padding: 10px; border: 1px solid var(--border); border-radius: 7px; background: #fff; }
 .carryover-card p { margin: 5px 0; white-space: pre-wrap; }
 .carryover-meta { color: var(--muted); font-size: 12px; }
-.carryover-actions { display: flex; gap: 6px; margin-top: 8px; }
-
-dialog { width: min(620px, calc(100vw - 32px)); border: 1px solid var(--border); border-radius: 10px; padding: 0; box-shadow: 0 18px 50px rgba(31,35,40,.28); }
-dialog::backdrop { background: rgba(31,35,40,.45); }
-#composer-form > header, #composer-form > footer { display: flex; align-items: center; gap: 8px; padding: 12px 14px; }
-#composer-form > header { justify-content: space-between; border-bottom: 1px solid var(--border); }
-#composer-form > footer { justify-content: flex-end; border-top: 1px solid var(--border); }
-#composer-form h2 { margin: 0; font-size: 16px; }
-#composer-close { border: 0; background: transparent; font-size: 22px; }
-#composer textarea { width: calc(100% - 28px); margin: 0 14px 12px; padding: 10px; resize: vertical; }
-.composer-quote { margin: 12px 14px 8px; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--panel); color: var(--muted); white-space: pre-wrap; }
-#composer .error { min-height: 18px; margin: 0 14px 8px; }
+.carryover-actions { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; margin-top: 8px; align-items: end; }
+.carryover-actions textarea { min-height: 58px; padding: 8px; resize: vertical; }
+body.embedded .viewer-header { border-radius: 0; }
 
 .settings-shell { max-width: 680px; margin: 48px auto; padding: 0 24px; }
 .settings-form { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; }

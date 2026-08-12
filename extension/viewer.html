@@ -14,6 +14,7 @@
       <button id="refresh" type="button" disabled>刷新</button>
       <button id="general-comment" type="button" class="primary" disabled>＋ 总体意见</button>
       <button id="open-settings" type="button">设置</button>
+      <button id="close-embedded" type="button" hidden>返回 PR</button>
     </div>
   </header>
   <p id="status" class="status" role="status">正在初始化…</p>
@@ -28,21 +29,6 @@
   </section>
   <iframe id="sandbox" title="Plan rendered review" sandbox="allow-scripts"></iframe>
 </div>
-<dialog id="composer">
-  <form method="dialog" id="composer-form">
-    <header>
-      <h2 id="composer-title">发表评论</h2>
-      <button id="composer-close" type="button" aria-label="关闭">×</button>
-    </header>
-    <div id="composer-quote" class="composer-quote"></div>
-    <textarea id="composer-body" rows="7" maxlength="4000" required></textarea>
-    <p id="composer-error" class="error" role="alert"></p>
-    <footer>
-      <button id="composer-cancel" type="button">取消</button>
-      <button id="composer-submit" type="submit" class="primary">提交</button>
-    </footer>
-  </form>
-</dialog>
 <script src="protocol.js"></script>
 <script src="github.js"></script>
 <script src="viewer.js"></script>

@@ -1,5 +1,5 @@
 {
-  "latest": 2,
+  "latest": 3,
   "plan_key": "product/dogfood",
   "schema": "plannotate.github/v1",
   "versions": [
@@ -18,6 +18,14 @@
       "artifact_sha256": "a9e0f13dc5fa0f334c2a4a3fa9d08239aa768afa7298c7c3de2cf8edb0895923",
       "created_at": "2026-08-12T04:43:45-07:00",
       "version": 2
+    },
+    {
+      "anchors_path": ".plannotate/product/dogfood/v0003.anchors.json",
+      "anchors_sha256": "c985aed0baff362b3b2af96bf137105028662c815fe66541b29ea7283c789ee9",
+      "artifact_path": ".plannotate/product/dogfood/v0003.html",
+      "artifact_sha256": "6af46f5e851f549156b4e266256d5b174bc91396aa584addc19d912d6d121b66",
+      "created_at": "2026-08-12T08:00:09-07:00",
+      "version": 3
     }
   ]
 }

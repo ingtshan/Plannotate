@@ -44,12 +44,12 @@ python3 scripts/build_extension.py
 The command creates:
 
 ```text
-dist/plannotate-v0.1.2/
-dist/plannotate-v0.1.2.zip
+dist/plannotate-v0.2.0/
+dist/plannotate-v0.2.0.zip
 dist/SHA256SUMS.txt
 ```
 
-Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select the generated `dist/plannotate-v0.1.2` directory. The ZIP contains the same auditable unpacked directory; a self-signed CRX is intentionally not produced.
+Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select the generated `dist/plannotate-v0.2.0` directory. The ZIP contains the same auditable unpacked directory; a self-signed CRX is intentionally not produced.
 
 Open the extension options and save a fine-grained GitHub personal access token limited to the repositories you review:
 
@@ -75,7 +75,7 @@ git push
 
 Running `package` again after editing the source creates `v0002`; it does not modify `v0001`. Add a stable `data-plan-anchor="authentication"` attribute to important blocks when comments should carry clearly across versions. Unmarked blocks receive deterministic fallback anchors.
 
-Open the pull request and click **Review rendered plan**. Plannotate discovers changed manifests, lets you choose a version, and supports:
+Open the pull request and choose the native-style **Plan review** tab. Plannotate renders an inline review workspace in the PR, discovers changed manifests, lets you choose a version, and supports:
 
 - general plan feedback;
 - block-level comments;

@@ -11,14 +11,9 @@
     iframe: document.getElementById("sandbox"),
     carryoverSection: document.getElementById("carryover-section"),
     carryoverList: document.getElementById("carryover-list"),
-    dialog: document.getElementById("composer"),
-    dialogTitle: document.getElementById("composer-title"),
-    dialogQuote: document.getElementById("composer-quote"),
-    dialogBody: document.getElementById("composer-body"),
-    dialogError: document.getElementById("composer-error"),
-    dialogSubmit: document.getElementById("composer-submit"),
     refresh: document.getElementById("refresh"),
     general: document.getElementById("general-comment"),
+    closeEmbedded: document.getElementById("close-embedded"),
   };
   const query = new URLSearchParams(location.search);
   const ref = {
@@ -27,7 +22,7 @@
   const channel = crypto.randomUUID();
   const state = {
     api: null, planKeys: [], planKey: null, bundle: null,
-    allThreads: [], records: [], sandboxReady: false, composer: null,
+    allThreads: [], records: [], sandboxReady: false,
   };
 
   function setStatus(message, error) {
@@ -48,6 +43,10 @@
 
   async function init() {
     if (!validRef()) return setStatus("缺少有效的 GitHub PR 上下文。", true);
+    if (query.get("embedded") === "1") {
+      document.body.classList.add("embedded");
+      elements.closeEmbedded.hidden = false;
+    }
     const prUrl = "https://github.com/" + ref.owner + "/" + ref.repo + "/pull/" + ref.number;
     const link = document.getElementById("pr-link");
     link.href = prUrl;
@@ -164,7 +163,17 @@
       const actions = document.createElement("div");
       actions.className = "carryover-actions";
       if (record.permissions.reply) {
-        actions.appendChild(makeButton("回复", () => openReply(record)));
+        const input = document.createElement("textarea");
+        input.rows = 2;
+        input.maxLength = 4000;
+        input.placeholder = "回复旧版本线程…";
+        const reply = makeButton("回复", async () => {
+          if (!input.value.trim()) return;
+          input.disabled = true;
+          reply.disabled = true;
+          await replyInline(record, input.value.trim());
+        });
+        actions.append(input, reply);
       }
       if (record.permissions.resolve) {
         actions.appendChild(makeButton("解决", () => mutateThread("resolve", record)));
@@ -172,30 +181,6 @@
       card.append(meta, body, actions);
       return card;
     }));
-  }
-
-  function openComposer(request) {
-    if (!state.bundle) return setStatus("plan artifact 尚未加载完成。", true);
-    state.composer = { type: "comment", request };
-    elements.dialogTitle.textContent = request.general ? "发表总体意见" : "评论此处";
-    const selection = request.selection && "\n高亮：“" + request.selection.text + "”";
-    elements.dialogQuote.textContent = request.general
-      ? "针对当前版本的总体意见"
-      : "块：" + request.anchor.quote + (selection || "");
-    elements.dialogBody.value = "";
-    elements.dialogError.textContent = "";
-    elements.dialog.showModal();
-    elements.dialogBody.focus();
-  }
-
-  function openReply(record) {
-    state.composer = { type: "reply", record };
-    elements.dialogTitle.textContent = "回复线程";
-    elements.dialogQuote.textContent = record.body;
-    elements.dialogBody.value = "";
-    elements.dialogError.textContent = "";
-    elements.dialog.showModal();
-    elements.dialogBody.focus();
   }
 
   function commentMetadata(request) {
@@ -218,32 +203,20 @@
     };
   }
 
-  async function submitComposer() {
-    const body = elements.dialogBody.value;
-    if (!body.trim() || !state.composer) return;
-    elements.dialogSubmit.disabled = true;
-    elements.dialogError.textContent = "";
+  async function createComment(request, body) {
+    if (!body.trim() || !request || !state.bundle) return;
     try {
-      if (state.composer.type === "reply") {
-        await state.api.replyThread(state.composer.record.threadId, body.trim());
-      } else {
-        const request = state.composer.request;
-        const metadata = commentMetadata(request);
-        await state.api.createReviewComment(ref, {
-          body: protocol.buildCommentBody(body, metadata),
-          commitSha: state.bundle.headSha,
-          path: state.bundle.version.artifact_path,
-          line: metadata.line,
-          fileLevel: metadata.general,
-        });
-      }
-      elements.dialog.close();
-      state.composer = null;
+      const metadata = commentMetadata(request);
+      await state.api.createReviewComment(ref, {
+        body: protocol.buildCommentBody(body, metadata),
+        commitSha: state.bundle.headSha,
+        path: state.bundle.version.artifact_path,
+        line: metadata.line,
+        fileLevel: metadata.general,
+      });
       await refreshThreads();
     } catch (error) {
-      elements.dialogError.textContent = error.message;
-    } finally {
-      elements.dialogSubmit.disabled = false;
+      sendSandboxComposerError(error.message);
     }
   }
 
@@ -277,6 +250,13 @@
     }, "*");
   }
 
+  function sendSandboxComposerError(message) {
+    if (!state.sandboxReady) return;
+    elements.iframe.contentWindow.postMessage({
+      source: "plannotate-parent", channel, type: "compose-error", message,
+    }, "*");
+  }
+
   function findRecord(threadId) {
     return state.records.find((item) => item.threadId === threadId);
   }
@@ -288,8 +268,8 @@
     if (message.type === "ready") {
       state.sandboxReady = true;
       sendRender();
-    } else if (message.type === "compose") {
-      openComposer(message);
+    } else if (message.type === "comment") {
+      createComment(message.request, message.body || "");
     } else if (message.type === "reply") {
       const record = findRecord(message.threadId);
       if (record) replyInline(record, message.body || "");
@@ -308,7 +288,10 @@
     Number(elements.version.value) || undefined
   ));
   elements.general.addEventListener(
-    "click", () => openComposer({ general: true, anchor: null, selection: null })
+    "click", () => elements.iframe.contentWindow.postMessage({
+      source: "plannotate-parent", channel, type: "open-composer",
+      request: { general: true, anchor: null, selection: null },
+    }, "*")
   );
   document.getElementById("open-settings").addEventListener(
     "click", () => chrome.runtime.openOptionsPage()
@@ -316,15 +299,8 @@
   document.getElementById("auth-settings").addEventListener(
     "click", () => chrome.runtime.openOptionsPage()
   );
-  document.getElementById("composer-form").addEventListener("submit", (event) => {
-    event.preventDefault();
-    submitComposer();
-  });
-  ["composer-close", "composer-cancel"].forEach((id) => {
-    document.getElementById(id).addEventListener("click", () => {
-      state.composer = null;
-      elements.dialog.close();
-    });
+  elements.closeEmbedded.addEventListener("click", () => {
+    parent.postMessage({ source: "plannotate-viewer", type: "close" }, "*");
   });
 
   init().catch((error) => setStatus(error.message, true));

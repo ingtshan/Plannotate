@@ -31,14 +31,14 @@ ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 INSTALL_TEXT = """Plannotate 安装说明
 
 1. 解压 ZIP（若使用本目录则跳过）。
-2. 在 Chrome 打开 chrome://extensions/。
+2. 在 Ego Lite 或 Chromium 浏览器打开 chrome://extensions/。
 3. 打开右上角「开发者模式」。
 4. 点击「加载已解压的扩展程序」。
 5. 选择包含 manifest.json 的 plannotate-v{version} 目录。
 6. 打开扩展的「详细信息」→「扩展程序选项」，保存 fine-grained GitHub token。
 
 Token 最小仓库权限：Contents read、Pull requests read/write、Metadata read。
-随后打开 GitHub PR，点击页面右下角的 Review rendered plan。
+随后打开 GitHub PR，选择 PR 导航中的 Plan review。
 """
 
 

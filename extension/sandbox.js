@@ -9,9 +9,18 @@
   const errorBox = document.getElementById("prg-error");
   const addButton = document.getElementById("prg-add");
   const selectionButton = document.getElementById("prg-selection");
+  const reviewRail = document.getElementById("prg-review-rail");
+  const railThreads = document.getElementById("prg-rail-threads");
+  const railEmpty = document.getElementById("prg-rail-empty");
+  const railCount = document.getElementById("prg-rail-count");
+  const composer = document.getElementById("prg-composer");
+  const composerTitle = document.getElementById("prg-composer-title");
+  const composerQuote = document.getElementById("prg-composer-quote");
+  const composerBody = document.getElementById("prg-composer-body");
+  const composerError = document.getElementById("prg-composer-error");
   const state = {
     blocks: [], blockByElement: new WeakMap(), hover: null,
-    selection: null, threads: [], anchors: [],
+    selection: null, threads: [], anchors: [], composerRequest: null,
   };
 
   function post(type, payload) {
@@ -246,27 +255,24 @@
   }
 
   function threadContainer(block) {
-    const existing = planRoot.querySelector(
-      '.prg-thread-container[data-anchor="' + CSS.escape(block.anchorId) + '"]'
+    let group = railThreads.querySelector(
+      '.prg-thread-group[data-anchor="' + CSS.escape(block.anchorId) + '"]'
     );
-    if (existing) return existing;
+    if (group) return group.querySelector(".prg-thread-container");
+    group = document.createElement("section");
+    group.className = "prg-thread-group prg-ui";
+    group.dataset.anchor = block.anchorId;
+    const heading = textElement("button", "prg-thread-group-link", block.quote);
+    heading.type = "button";
+    heading.addEventListener("click", () => {
+      block.element.scrollIntoView({ behavior: "smooth", block: "center" });
+      block.element.classList.add("prg-focus-pulse");
+      setTimeout(() => block.element.classList.remove("prg-focus-pulse"), 900);
+    });
     const container = document.createElement("div");
     container.className = "prg-thread-container prg-ui";
-    container.dataset.anchor = block.anchorId;
-    if (block.element.tagName === "TR" || block.element.closest("tr") && block.media) {
-      const row = block.element.tagName === "TR" ? block.element : block.element.closest("tr");
-      const reviewRow = document.createElement("tr");
-      reviewRow.className = "prg-thread-row prg-ui";
-      const cell = document.createElement("td");
-      cell.colSpan = Math.max(1, row.cells.length);
-      cell.appendChild(container);
-      reviewRow.appendChild(cell);
-      row.insertAdjacentElement("afterend", reviewRow);
-    } else {
-      let host = block.element;
-      if (block.media) host = block.element.closest("figure,p,li,section,article,div") || host;
-      host.insertAdjacentElement("afterend", container);
-    }
+    group.append(heading, container);
+    railThreads.appendChild(group);
     return container;
   }
 
@@ -394,8 +400,7 @@
 
   function renderThreads(records) {
     clearMarks();
-    planRoot.querySelectorAll(".prg-thread-container,.prg-thread-row")
-      .forEach((element) => element.remove());
+    railThreads.replaceChildren();
     state.blocks.forEach((block) => block.element.classList.remove("prg-has-open"));
     const general = records.filter((item) => item.metadata.general);
     const generalSection = document.getElementById("prg-general");
@@ -429,6 +434,8 @@
     document.getElementById("prg-orphan-threads").replaceChildren(
       ...orphans.map(renderThread)
     );
+    railCount.textContent = records.length + " 个线程";
+    railEmpty.hidden = Boolean(records.length);
   }
 
   function positionButton(button, rect, left) {
@@ -453,7 +460,7 @@
 
   addButton.addEventListener("click", () => {
     if (!state.hover) return;
-    post("compose", { general: false, anchor: serializableBlock(state.hover), selection: null });
+    openComposer({ general: false, anchor: serializableBlock(state.hover), selection: null });
   });
 
   function serializableBlock(block) {
@@ -476,7 +483,7 @@
   selectionButton.addEventListener("click", () => {
     const captured = state.selection;
     if (!captured) return;
-    post("compose", {
+    openComposer({
       general: false,
       anchor: serializableBlock(captured.block),
       selection: { start: captured.start, end: captured.end, text: captured.text },
@@ -485,7 +492,42 @@
   });
 
   document.getElementById("prg-general-add").addEventListener("click", () => {
-    post("compose", { general: true, anchor: null, selection: null });
+    openComposer({ general: true, anchor: null, selection: null });
+  });
+  document.getElementById("prg-rail-general").addEventListener("click", () => {
+    openComposer({ general: true, anchor: null, selection: null });
+  });
+
+  function openComposer(request) {
+    state.composerRequest = request;
+    composerTitle.textContent = request.general ? "发表总体意见" : "评论此处";
+    const selection = request.selection && " · 选区：“" + request.selection.text + "”";
+    composerQuote.textContent = request.general
+      ? "针对当前 plan 版本"
+      : "块：" + request.anchor.quote + (selection || "");
+    composerBody.value = "";
+    composerError.textContent = "";
+    composer.hidden = false;
+    composerBody.focus();
+  }
+
+  function closeComposer() {
+    state.composerRequest = null;
+    composer.hidden = true;
+    composerError.textContent = "";
+  }
+
+  document.getElementById("prg-composer-submit").addEventListener("click", () => {
+    if (!state.composerRequest || !composerBody.value.trim()) return;
+    post("comment", {
+      request: state.composerRequest,
+      body: composerBody.value.trim(),
+    });
+    composerBody.disabled = true;
+    document.getElementById("prg-composer-submit").disabled = true;
+  });
+  ["prg-composer-close", "prg-composer-cancel"].forEach((id) => {
+    document.getElementById(id).addEventListener("click", closeComposer);
   });
 
   window.addEventListener("message", (event) => {
@@ -496,6 +538,16 @@
       showThreadError(message.threadId, message.message || "GitHub 操作失败");
       return;
     }
+    if (message.type === "compose-error") {
+      composerError.textContent = message.message || "GitHub 操作失败";
+      composerBody.disabled = false;
+      document.getElementById("prg-composer-submit").disabled = false;
+      return;
+    }
+    if (message.type === "open-composer") {
+      openComposer(message.request || { general: true, anchor: null, selection: null });
+      return;
+    }
     if (message.type !== "render") return;
     try {
       showError("");
@@ -504,6 +556,9 @@
       state.threads = message.threads || [];
       scanBlocks(state.anchors);
       renderThreads(state.threads);
+      closeComposer();
+      composerBody.disabled = false;
+      document.getElementById("prg-composer-submit").disabled = false;
     } catch (error) {
       showError(error.message);
       planRoot.replaceChildren();
