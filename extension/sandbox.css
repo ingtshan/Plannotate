@@ -1,0 +1,54 @@
+:root {
+  color-scheme: light;
+  --prg-blue: #0969da;
+  --prg-border: #d0d7de;
+  --prg-muted: #57606a;
+  --prg-panel: #f6f8fa;
+  --prg-open: #1a7f37;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+html, body { min-height: 100%; margin: 0; }
+body { padding: 22px max(28px, calc((100vw - 1120px) / 2)); color: #1f2328; background: #fff; }
+#prg-plan { position: relative; z-index: 0; min-width: 0; isolation: isolate; }
+#prg-plan > :first-child { margin-top: 0; }
+#prg-error { margin-bottom: 14px; padding: 12px; border: 1px solid #cf222e; border-radius: 7px; color: #cf222e; background: #ffebe9; }
+#prg-general, #prg-orphans { position: relative; z-index: 2; margin: 0 0 18px; padding: 12px; border: 1px solid var(--prg-border); border-radius: 8px; background: var(--prg-panel); }
+#prg-general > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#prg-general h2, #prg-orphans h2 { margin: 0 0 8px; font: 600 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+#prg-general button, #prg-orphans button, .prg-thread button, #prg-add, #prg-selection {
+  border: 1px solid var(--prg-border); border-radius: 6px; padding: 5px 9px;
+  font: 600 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1f2328; background: #fff; cursor: pointer;
+}
+#prg-general button:hover, .prg-thread button:hover { background: #eef1f4; }
+.prg-reviewable { transition: outline-color .12s ease; outline: 2px solid transparent; outline-offset: 3px; }
+.prg-reviewable.prg-hover { outline-color: rgba(9,105,218,.45); }
+.prg-reviewable.prg-has-open { box-shadow: -4px 0 0 var(--prg-open); }
+#prg-add { position: absolute; z-index: 2147483647; width: 28px; height: 28px; padding: 0; color: #fff; border-color: var(--prg-blue); background: var(--prg-blue); font-size: 20px; line-height: 24px; }
+#prg-selection { position: absolute; z-index: 2147483647; color: #fff; border-color: var(--prg-blue); background: var(--prg-blue); }
+.prg-thread-container { margin: 8px 0 16px; font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+#prg-plan .prg-thread-container, #prg-plan .prg-thread-container * { box-sizing: border-box; }
+.prg-thread-row > td { padding: 0 !important; border: 0 !important; }
+.prg-thread { margin: 7px 0; overflow: hidden; border: 1px solid var(--prg-border); border-radius: 8px; color: #1f2328; background: #fff; box-shadow: 0 1px 2px rgba(31,35,40,.06); }
+.prg-thread.prg-resolved { opacity: .72; }
+.prg-thread-header { display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--prg-border); background: var(--prg-panel); }
+.prg-thread-author { font-weight: 600; }
+.prg-thread-meta { color: var(--prg-muted); font-size: 12px; }
+.prg-thread-quote { padding: 7px 10px; color: var(--prg-muted); border-bottom: 1px solid var(--prg-border); font-size: 12px; }
+.prg-thread-highlight { display: inline; padding: 1px 3px; background: #fff8c5; }
+.prg-thread-body, .prg-reply-body { padding: 9px 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.prg-reply { margin-left: 22px; border-top: 1px solid var(--prg-border); }
+.prg-reply-meta { padding: 6px 10px 0; color: var(--prg-muted); font-size: 12px; }
+.prg-thread-actions { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--prg-border); }
+.prg-thread-actions textarea { min-width: 180px; flex: 1; min-height: 34px; resize: vertical; border: 1px solid var(--prg-border); border-radius: 6px; padding: 6px 8px; font: inherit; }
+.prg-thread-error { padding: 7px 10px; color: #cf222e; border-top: 1px solid #ff818266; background: #ffebe9; font-size: 12px; }
+.prg-stale { color: #9a6700; font-size: 12px; }
+mark.prg-selection-mark { padding: 0; color: inherit; background: #fff8c5; cursor: pointer; }
+
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: dark; --prg-border: #30363d; --prg-muted: #8b949e; --prg-panel: #161b22; }
+  body, .prg-thread { color: #e6edf3; background: #0d1117; }
+  #prg-general button, .prg-thread button { color: #e6edf3; background: #21262d; }
+  .prg-thread-highlight, mark.prg-selection-mark { background: #6e5a00; }
+}

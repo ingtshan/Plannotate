@@ -1,0 +1,18 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Plannotate 设置</title>
+<link rel="stylesheet" href="viewer.css">
+<main class="settings-shell">
+  <h1>Plannotate</h1>
+  <p>配置一个仅覆盖目标仓库的 fine-grained token。所需权限：Contents read、Pull requests read/write、Metadata read。</p>
+  <form id="settings-form" class="settings-form">
+    <label for="github-token">GitHub token</label>
+    <input id="github-token" name="github-token" type="password" autocomplete="off" required>
+    <label class="checkbox"><input id="show-token" type="checkbox"> 显示 token</label>
+    <button type="submit" class="primary">保存</button>
+    <button id="clear-token" type="button">清除</button>
+  </form>
+  <p id="settings-status" class="status" role="status"></p>
+  <p class="muted">Token 只保存在此 Chrome profile 的扩展存储中，不会写进 plan、评论或仓库。</p>
+</main>
+<script src="options.js"></script>
