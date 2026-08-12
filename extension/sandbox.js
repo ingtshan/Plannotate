@@ -18,7 +18,6 @@
   const errorBox = document.getElementById("prg-error");
   const addButton = document.getElementById("prg-add");
   const selectionButton = document.getElementById("prg-selection");
-  const reviewRail = document.getElementById("prg-review-rail");
   const railThreads = document.getElementById("prg-rail-threads");
   const railEmpty = document.getElementById("prg-rail-empty");
   const railCount = document.getElementById("prg-rail-count");
@@ -27,6 +26,7 @@
   const composerQuote = document.getElementById("prg-composer-quote");
   const composerBody = document.getElementById("prg-composer-body");
   const composerError = document.getElementById("prg-composer-error");
+  const composerSubmit = document.getElementById("prg-composer-submit");
   const state = {
     blocks: [], blockByElement: new WeakMap(), hover: null,
     selection: null, threads: [], anchors: [], composerRequest: null,
@@ -265,6 +265,28 @@
     return { block, start, end, text, rect: range.getBoundingClientRect() };
   }
 
+  function focusBlock(block) {
+    block.element.scrollIntoView({ behavior: "smooth", block: "center" });
+    block.element.classList.add("prg-focus-pulse");
+    setTimeout(() => block.element.classList.remove("prg-focus-pulse"), 900);
+  }
+
+  function blockByAnchor(anchorId, blockHash) {
+    return state.blocks.find((item) => item.anchorId === anchorId)
+      || state.blocks.find((item) => item.hash === blockHash);
+  }
+
+  function staticGroup(title) {
+    const group = document.createElement("section");
+    group.className = "prg-thread-group prg-ui";
+    group.appendChild(textElement("div", "prg-thread-group-title", title));
+    const container = document.createElement("div");
+    container.className = "prg-thread-container prg-ui";
+    group.appendChild(container);
+    railThreads.appendChild(group);
+    return container;
+  }
+
   function threadContainer(block) {
     let group = railThreads.querySelector(
       '.prg-thread-group[data-anchor="' + CSS.escape(block.anchorId) + '"]'
@@ -275,11 +297,7 @@
     group.dataset.anchor = block.anchorId;
     const heading = textElement("button", "prg-thread-group-link", block.quote);
     heading.type = "button";
-    heading.addEventListener("click", () => {
-      block.element.scrollIntoView({ behavior: "smooth", block: "center" });
-      block.element.classList.add("prg-focus-pulse");
-      setTimeout(() => block.element.classList.remove("prg-focus-pulse"), 900);
-    });
+    heading.addEventListener("click", () => focusBlock(block));
     const container = document.createElement("div");
     container.className = "prg-thread-container prg-ui";
     group.append(heading, container);
@@ -305,6 +323,29 @@
     return button;
   }
 
+  function confirmButton(label, warning, action) {
+    const button = textElement("button", "", label);
+    button.type = "button";
+    let armed = false;
+    const disarm = () => {
+      armed = false;
+      button.textContent = label;
+      button.classList.remove("prg-danger");
+    };
+    button.addEventListener("click", () => {
+      if (!armed) {
+        armed = true;
+        button.textContent = warning;
+        button.classList.add("prg-danger");
+        setTimeout(() => { if (armed) disarm(); }, 5000);
+        return;
+      }
+      disarm();
+      action();
+    });
+    return button;
+  }
+
   function threadHeader(record) {
     const header = document.createElement("header");
     header.className = "prg-thread-header";
@@ -319,13 +360,30 @@
     return header;
   }
 
-  function threadQuote(metadata) {
-    if (metadata.general) return null;
-    const quote = textElement("div", "prg-thread-quote", "块：" + metadata.quote);
+  function threadQuote(record) {
+    const metadata = record.metadata;
+    const parts = [];
+    if (!record.current) {
+      parts.push("v" + String(metadata.version).padStart(4, "0"));
+    }
+    if (metadata.general) {
+      if (record.current) return null;
+      parts.push("总体意见");
+    } else {
+      parts.push("块：" + metadata.quote);
+    }
+    const quote = textElement("div", "prg-thread-quote", parts.join(" · "));
     if (metadata.selection) {
       quote.append(" · ", textElement(
         "span", "prg-thread-highlight", "“" + metadata.selection.text + "”"
       ));
+    }
+    if (!record.current && !metadata.general) {
+      const block = blockByAnchor(metadata.anchor_id, metadata.block_hash);
+      if (block) {
+        quote.classList.add("prg-thread-quote-link");
+        quote.addEventListener("click", () => focusBlock(block));
+      }
     }
     return quote;
   }
@@ -376,11 +434,10 @@
       ));
     }
     if (record.permissions.delete) {
-      actions.appendChild(actionButton("删除", () => {
-        if (confirm("删除此 GitHub review comment？")) {
-          post("delete", { threadId: record.threadId });
-        }
-      }));
+      actions.appendChild(confirmButton(
+        "删除", "确认删除该 GitHub comment？",
+        () => post("delete", { threadId: record.threadId })
+      ));
     }
     return actions;
   }
@@ -390,7 +447,7 @@
     card.className = "prg-thread" + (record.isResolved ? " prg-resolved" : "");
     card.id = "prg-thread-" + record.threadId;
     card.appendChild(threadHeader(record));
-    const quote = threadQuote(record.metadata);
+    const quote = threadQuote(record);
     if (quote) card.appendChild(quote);
     card.appendChild(textElement("div", "prg-thread-body", record.body));
     appendReplies(card, record);
@@ -426,17 +483,17 @@
     clearMarks();
     railThreads.replaceChildren();
     state.blocks.forEach((block) => block.element.classList.remove("prg-has-open"));
-    const general = records.filter((item) => item.metadata.general);
-    const generalSection = document.getElementById("prg-general");
-    generalSection.hidden = false;
-    document.getElementById("prg-general-threads").replaceChildren(
-      ...general.map(renderThread)
-    );
+    const current = records.filter((item) => item.current);
+    const carryover = records.filter((item) => !item.current && !item.isResolved);
+    const general = current.filter((item) => item.metadata.general);
     const orphans = [];
-    records.filter((item) => !item.metadata.general).forEach((record) => {
+    if (general.length) {
+      const container = staticGroup("总体意见");
+      general.forEach((record) => container.appendChild(renderThread(record)));
+    }
+    current.filter((item) => !item.metadata.general).forEach((record) => {
       const metadata = record.metadata;
-      const block = state.blocks.find((item) => item.anchorId === metadata.anchor_id)
-        || state.blocks.find((item) => item.hash === metadata.block_hash);
+      const block = blockByAnchor(metadata.anchor_id, metadata.block_hash);
       if (!block) {
         orphans.push(record);
         return;
@@ -453,13 +510,18 @@
       }
       threadContainer(block).appendChild(card);
     });
-    const orphanSection = document.getElementById("prg-orphans");
-    orphanSection.hidden = !orphans.length;
-    document.getElementById("prg-orphan-threads").replaceChildren(
-      ...orphans.map(renderThread)
-    );
-    railCount.textContent = records.length + " 个线程";
-    railEmpty.hidden = Boolean(records.length);
+    if (carryover.length) {
+      const container = staticGroup("其他版本未解决");
+      carryover.forEach((record) => container.appendChild(renderThread(record)));
+    }
+    if (orphans.length) {
+      const container = staticGroup("无法定位的线程");
+      orphans.forEach((record) => container.appendChild(renderThread(record)));
+    }
+    const open = current.filter((item) => !item.isResolved).length + carryover.length;
+    const total = current.length + carryover.length;
+    railCount.textContent = "未解决 " + open + " · 共 " + total;
+    railEmpty.hidden = Boolean(total);
   }
 
   function positionButton(button, rect, left) {
@@ -515,9 +577,6 @@
     selectionButton.hidden = true;
   });
 
-  document.getElementById("prg-general-add").addEventListener("click", () => {
-    openComposer({ general: true, anchor: null, selection: null });
-  });
   document.getElementById("prg-rail-general").addEventListener("click", () => {
     openComposer({ general: true, anchor: null, selection: null });
   });
@@ -541,24 +600,52 @@
     composerError.textContent = "";
   }
 
-  function showComposerError(message, pendingReview) {
-    composerError.replaceChildren(document.createTextNode(message));
-    if (pendingReview) {
-      composerError.appendChild(actionButton(
-        "新标签页处理未提交 review",
-        () => post("open-pending-review")
-      ));
-    }
+  function setComposerBusy(busy) {
+    composerBody.disabled = busy;
+    composerSubmit.disabled = busy;
   }
 
-  document.getElementById("prg-composer-submit").addEventListener("click", () => {
+  function startRecovery(mode) {
+    if (!state.composerRequest) return;
+    post("pending-review-recover", {
+      mode,
+      request: state.composerRequest,
+      body: composerBody.value.trim(),
+    });
+    composerError.replaceChildren(
+      document.createTextNode("正在处理 pending review 并重发评论…")
+    );
+    setComposerBusy(true);
+  }
+
+  function showComposerError(message, recovery) {
+    composerError.replaceChildren(document.createTextNode(message));
+    if (!recovery || recovery.kind !== "pending-review") return;
+    const actions = document.createElement("div");
+    actions.className = "prg-composer-recovery";
+    if (recovery.found) {
+      actions.appendChild(actionButton(
+        "提交 pending review 并重发", () => startRecovery("submit")
+      ));
+      actions.appendChild(confirmButton(
+        "丢弃 pending review 并重发",
+        "确认丢弃 " + recovery.comments + " 条草稿？",
+        () => startRecovery("discard")
+      ));
+    }
+    actions.appendChild(actionButton(
+      "在 GitHub 查看", () => post("open-pending-review")
+    ));
+    composerError.appendChild(actions);
+  }
+
+  composerSubmit.addEventListener("click", () => {
     if (!state.composerRequest || !composerBody.value.trim()) return;
     post("comment", {
       request: state.composerRequest,
       body: composerBody.value.trim(),
     });
-    composerBody.disabled = true;
-    document.getElementById("prg-composer-submit").disabled = true;
+    setComposerBusy(true);
   });
   ["prg-composer-close", "prg-composer-cancel"].forEach((id) => {
     document.getElementById(id).addEventListener("click", closeComposer);
@@ -576,11 +663,8 @@
       return;
     }
     if (message.type === "compose-error") {
-      showComposerError(
-        message.message || "GitHub 操作失败", Boolean(message.pendingReview)
-      );
-      composerBody.disabled = false;
-      document.getElementById("prg-composer-submit").disabled = false;
+      showComposerError(message.message || "GitHub 操作失败", message.recovery);
+      setComposerBusy(false);
       return;
     }
     if (message.type === "open-composer") {
@@ -596,8 +680,7 @@
       scanBlocks(state.anchors);
       renderThreads(state.threads);
       closeComposer();
-      composerBody.disabled = false;
-      document.getElementById("prg-composer-submit").disabled = false;
+      setComposerBusy(false);
     } catch (error) {
       showError(error.message);
       planRoot.replaceChildren();

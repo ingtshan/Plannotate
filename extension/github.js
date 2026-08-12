@@ -132,9 +132,8 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
       title: "GitHub 已有未提交的 review",
       summary: "同一账号在一个 PR 只能有一个 pending review；你的 Plannotate 评论草稿已保留。",
       steps: [
-        "在 Files changed 中打开 Review changes",
-        "提交或取消已有的 pending review",
-        "回到 Plan review，再次点击发表评论",
+        "直接在下方选择提交或丢弃该 pending review，评论会自动重发",
+        "也可以在 GitHub 的 Files changed → Review changes 中处理后重试",
       ],
       pendingReview: true,
     };
@@ -448,6 +447,47 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
       return this.request(
         "DELETE", "/repos/" + ref.owner + "/" + ref.repo
           + "/pulls/comments/" + commentId
+      );
+    }
+
+    async findPendingReview(ref) {
+      for (let page = 1; page <= 10; page += 1) {
+        const batch = await this.json(
+          "GET", this.pullPath(ref) + "/reviews?per_page=100&page=" + page
+        );
+        const pending = batch.find((review) => review
+          && review.state === "PENDING" && Number.isInteger(review.id));
+        if (pending) {
+          const comments = await this.json(
+            "GET", this.pullPath(ref) + "/reviews/" + pending.id
+              + "/comments?per_page=100"
+          );
+          return {
+            id: pending.id,
+            commentCount: Array.isArray(comments) ? comments.length : 0,
+          };
+        }
+        if (batch.length < 100) return null;
+      }
+      return null;
+    }
+
+    async submitPendingReview(ref, reviewId) {
+      if (!Number.isInteger(reviewId) || reviewId < 1) {
+        throw new Error("review id 非法");
+      }
+      return this.json(
+        "POST", this.pullPath(ref) + "/reviews/" + reviewId + "/events",
+        { event: "COMMENT" }
+      );
+    }
+
+    async deletePendingReview(ref, reviewId) {
+      if (!Number.isInteger(reviewId) || reviewId < 1) {
+        throw new Error("review id 非法");
+      }
+      return this.request(
+        "DELETE", this.pullPath(ref) + "/reviews/" + reviewId
       );
     }
   }

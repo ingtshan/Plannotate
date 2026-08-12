@@ -63,6 +63,16 @@ class _Candidate:
         self.line = line
         self.attributes = dict(attributes)
         self.text_parts = []
+        self.title_parts = []
+        self.inherited_anchor = None
+
+
+class _OpenSvg:
+    def __init__(self, candidate):
+        self.candidate = candidate
+        self.depth = 0
+        self.in_title = False
+        self.title_done = False
 
 
 class _PlanParser(HTMLParser):
@@ -71,6 +81,8 @@ class _PlanParser(HTMLParser):
         self.candidates = []
         self.active = []
         self.errors = []
+        self.svg_stack = []
+        self.figure_stack = []
 
     def handle_starttag(self, tag, attrs):
         self._handle_start(tag, attrs, self_closing=False)
@@ -82,20 +94,66 @@ class _PlanParser(HTMLParser):
         lowered = tag.lower()
         attributes = [(name.lower(), value or "") for name, value in attrs]
         self._validate_element(lowered, attributes)
+        if lowered == "figure" and not self_closing:
+            self.figure_stack.append(
+                {"anchor": dict(attributes).get("data-plan-anchor"),
+                 "line": self.getpos()[0], "claimed": False}
+            )
+        if self.svg_stack and lowered != "svg":
+            frame = self.svg_stack[-1]
+            if (lowered == "title" and frame.depth == 0
+                    and not frame.title_done and not self_closing):
+                frame.in_title = True
+            if not self_closing:
+                frame.depth += 1
         if lowered in COMMENTABLE_TAGS:
             candidate = _Candidate(lowered, self.getpos()[0], attributes)
+            if lowered in MEDIA_TAGS:
+                self._inherit_figure_anchor(candidate)
             self.candidates.append(candidate)
             if lowered not in MEDIA_TAGS and not self_closing:
                 self.active.append(candidate)
+            if lowered == "svg" and not self_closing:
+                self.svg_stack.append(_OpenSvg(candidate))
+
+    def _inherit_figure_anchor(self, candidate):
+        """The first media block of an anchored <figure> is the diagram."""
+        if candidate.attributes.get("data-plan-anchor"):
+            return
+        for frame in reversed(self.figure_stack):
+            if frame["anchor"] is None or frame["claimed"]:
+                continue
+            if not EXPLICIT_ANCHOR_PATTERN.fullmatch(frame["anchor"]):
+                raise ArtifactError(
+                    "invalid data-plan-anchor at line {0}: {1}".format(
+                        frame["line"], frame["anchor"]
+                    )
+                )
+            frame["claimed"] = True
+            candidate.inherited_anchor = frame["anchor"]
+            return
 
     def handle_endtag(self, tag):
         lowered = tag.lower()
+        if lowered == "svg":
+            if self.svg_stack:
+                self.svg_stack.pop()
+        elif self.svg_stack:
+            frame = self.svg_stack[-1]
+            if frame.in_title and lowered == "title":
+                frame.in_title = False
+                frame.title_done = True
+            frame.depth = max(0, frame.depth - 1)
+        if lowered == "figure" and self.figure_stack:
+            self.figure_stack.pop()
         for index in range(len(self.active) - 1, -1, -1):
             if self.active[index].tag == lowered:
                 del self.active[index]
                 return
 
     def handle_data(self, data):
+        if self.svg_stack and self.svg_stack[-1].in_title:
+            self.svg_stack[-1].candidate.title_parts.append(data)
         for candidate in self.active:
             candidate.text_parts.append(data)
 
@@ -146,7 +204,11 @@ def _media_details(candidate):
         width = candidate.attributes.get("width", "300")
         height = candidate.attributes.get("height", "150")
         return "canvas|{0}|{1}".format(width, height), "[图] canvas"
-    return "svg-line-{0}".format(candidate.line), "[图] svg"
+    title = normalize_text("".join(candidate.title_parts))
+    return (
+        "svg-line-{0}".format(candidate.line),
+        "[图] " + (title[:120] if title else "svg"),
+    )
 
 
 def _candidate_record(candidate, index, headings):
@@ -159,7 +221,7 @@ def _candidate_record(candidate, index, headings):
         hash_input, quote = text, text[:120]
     block_hash = fnv1a_utf16(hash_input)
     legacy_id = "b{0}-{1}".format(index, block_hash)
-    explicit = candidate.attributes.get("data-plan-anchor")
+    explicit = candidate.attributes.get("data-plan-anchor") or candidate.inherited_anchor
     if explicit and not EXPLICIT_ANCHOR_PATTERN.fullmatch(explicit):
         raise ArtifactError(
             "invalid data-plan-anchor at line {0}: {1}".format(

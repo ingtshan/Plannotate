@@ -15,15 +15,12 @@ body { padding: 0; color: #1f2328; background: #fff; }
 #prg-plan { padding: 28px max(24px, calc((100% - 1120px) / 2)); }
 #prg-plan > :first-child { margin-top: 0; }
 #prg-error { margin: 14px; padding: 12px; border: 1px solid #cf222e; border-radius: 7px; color: #cf222e; background: #ffebe9; }
-#prg-general, #prg-orphans { display: none; }
-#prg-general > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-#prg-general h2, #prg-orphans h2 { margin: 0 0 8px; font: 600 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-#prg-general button, #prg-orphans button, .prg-thread button, #prg-add, #prg-selection {
+#prg-rail-general, .prg-thread button, .prg-composer-recovery button, #prg-add, #prg-selection {
   border: 1px solid var(--prg-border); border-radius: 6px; padding: 5px 9px;
   font: 600 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #1f2328; background: #fff; cursor: pointer;
 }
-#prg-general button:hover, .prg-thread button:hover { background: #eef1f4; }
+#prg-rail-general:hover, .prg-thread button:hover, .prg-composer-recovery button:hover { background: #eef1f4; }
 .prg-reviewable { transition: outline-color .12s ease; outline: 2px solid transparent; outline-offset: 3px; }
 .prg-reviewable.prg-hover { outline-color: rgba(9,105,218,.45); }
 .prg-reviewable.prg-has-open { box-shadow: -4px 0 0 var(--prg-open); }
@@ -37,7 +34,8 @@ body { padding: 0; color: #1f2328; background: #fff; }
 #prg-rail-empty { margin: 12px; color: var(--prg-muted); font-size: 13px; }
 #prg-rail-threads { padding: 0 12px 24px; }
 .prg-thread-group { padding: 12px 0; border-bottom: 1px solid var(--prg-border); }
-.prg-thread-group-link { width: 100%; padding: 0 0 8px; overflow: hidden; color: var(--prg-blue); border: 0; background: transparent; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.prg-thread-group-link { width: 100%; padding: 0 0 8px; overflow: hidden; color: var(--prg-blue); border: 0; background: transparent; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; font: 600 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.prg-thread-group-title { padding: 0 0 8px; color: var(--prg-muted); font: 700 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: .04em; text-transform: uppercase; }
 .prg-thread-container { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 .prg-thread { margin: 7px 0; overflow: hidden; border: 1px solid var(--prg-border); border-radius: 8px; color: #1f2328; background: #fff; box-shadow: 0 1px 2px rgba(31,35,40,.06); }
 .prg-thread.prg-resolved { opacity: .72; }
@@ -45,6 +43,9 @@ body { padding: 0; color: #1f2328; background: #fff; }
 .prg-thread-author { font-weight: 600; }
 .prg-thread-meta { color: var(--prg-muted); font-size: 12px; }
 .prg-thread-quote { padding: 7px 10px; color: var(--prg-muted); border-bottom: 1px solid var(--prg-border); font-size: 12px; }
+.prg-thread-quote-link { color: var(--prg-blue); cursor: pointer; }
+.prg-danger { color: #cf222e !important; border-color: #cf222e !important; }
+.prg-composer-recovery { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .prg-thread-highlight { display: inline; padding: 1px 3px; background: #fff8c5; }
 .prg-thread-body, .prg-reply-body { padding: 9px 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .prg-reply { margin-left: 22px; border-top: 1px solid var(--prg-border); }

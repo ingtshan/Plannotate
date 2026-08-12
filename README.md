@@ -44,12 +44,12 @@ python3 scripts/build_extension.py
 The command creates:
 
 ```text
-dist/plannotate-v0.2.3/
-dist/plannotate-v0.2.3.zip
+dist/plannotate-v0.3.0/
+dist/plannotate-v0.3.0.zip
 dist/SHA256SUMS.txt
 ```
 
-Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select the generated `dist/plannotate-v0.2.3` directory. The ZIP contains the same auditable unpacked directory; a self-signed CRX is intentionally not produced.
+Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select the generated `dist/plannotate-v0.3.0` directory. The ZIP contains the same auditable unpacked directory; a self-signed CRX is intentionally not produced.
 
 Open the extension options and save a fine-grained GitHub personal access token limited to the repositories you review:
 
@@ -63,7 +63,7 @@ The options page links to GitHub's token form with the permissions prefilled and
 
 GitHub can still reject the GraphQL `resolveReviewThread` and `unresolveReviewThread` mutations for a fine-grained PAT that can successfully create and reply to review comments. Plannotate therefore keeps the least-privilege token and sends **resolve/reopen** to the matching native GitHub thread, using the browser's existing GitHub session. A classic PAT is only needed when unattended CLI automation must change thread state; it has a broader permission surface.
 
-GitHub also permits only one pending review per user on a pull request. If a review is already waiting under **Files changed → Review changes**, Plannotate preserves the comment input and opens the native pending-review page in a new tab so it can be submitted or cancelled before retrying.
+GitHub also permits only one pending review per user on a pull request. If a review is already waiting under **Files changed → Review changes**, Plannotate keeps the comment draft, detects the pending review through the REST reviews API, and offers to submit or discard it directly inside the composer before automatically resending the comment. Discarding deletes draft comments, so it requires a second confirming click and shows how many drafts are affected; a link to the native GitHub page remains as a fallback.
 
 The token stays in `chrome.storage.local`. It is sent only to `https://api.github.com` and is never placed in plan HTML, repository files, comments, or the sandbox frame.
 
@@ -82,14 +82,17 @@ git push
 
 Running `package` again after editing the source creates `v0002`; it does not modify `v0001`. Add a stable `data-plan-anchor="authentication"` attribute to important blocks when comments should carry clearly across versions. Unmarked blocks receive deterministic fallback anchors.
 
+Diagrams are first-class review targets. Give each `<svg>` a `<title>` child and wrap it in a `<figure data-plan-anchor="...">`: the first media block inside an anchored figure inherits the figure's anchor, and its comment label becomes `[图] <title text>` instead of a generic `[图] svg`.
+
 Open the pull request and choose the native-style **Plan review** tab. Plannotate renders an inline review workspace in the PR, discovers changed manifests, lets you choose a version, and supports:
 
 - general plan feedback;
-- block-level comments;
+- block-level comments, including SVG/image/canvas diagram blocks;
 - text-selection comments;
 - replies and deletion through the API;
 - resolve/reopen in native GitHub review for fine-grained tokens, or directly when the token supports the GraphQL mutations;
-- explicit carryover display for unresolved comments on older versions.
+- one review rail for every thread: current-version groups, general feedback, unresolved older-version carryover, and unlocatable threads;
+- in-place recovery when a pending review blocks comment creation.
 
 ## Use the CLI
 

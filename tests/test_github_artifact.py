@@ -81,12 +81,43 @@ class GitHubArtifactTests(unittest.TestCase):
             hashlib.sha256(first_body.encode("utf-8")).hexdigest(),
         )
 
+    def test_svg_blocks_use_direct_title_and_inherit_figure_anchor(self):
+        # Arrange
+        source = "\n".join((
+            '<figure data-plan-anchor="context-diagram">',
+            "<svg><title>系统上下文图</title><rect/></svg>",
+            "<figcaption>图例说明</figcaption>",
+            "</figure>",
+            '<figure data-plan-anchor="second">',
+            "<svg><rect><title>tooltip</title></rect></svg>",
+            "<svg><title>后备图</title></svg>",
+            "</figure>",
+        ))
+
+        # Act
+        first_svg, caption, second_svg, third_svg = scan_anchors(source)
+
+        # Assert: the first media block claims the figure anchor and its title
+        self.assertEqual(first_svg["anchor_id"], "context-diagram")
+        self.assertEqual(first_svg["quote"], "[图] 系统上下文图")
+        self.assertEqual(caption["quote"], "图例说明")
+        self.assertEqual(caption["anchor_id"], caption["legacy_block_id"])
+        # A nested shape title is not the diagram title
+        self.assertEqual(second_svg["anchor_id"], "second")
+        self.assertEqual(second_svg["quote"], "[图] svg")
+        # Only one media block inherits each figure anchor
+        self.assertEqual(third_svg["anchor_id"], third_svg["legacy_block_id"])
+        self.assertEqual(third_svg["quote"], "[图] 后备图")
+
     def test_rejects_executable_or_external_content_and_duplicate_anchors(self):
         invalid_sources = (
             "<script>alert(1)</script>",
             '<p onclick="alert(1)">unsafe</p>',
             '<img src="https://example.com/image.png">',
             '<p data-plan-anchor="same">one</p><p data-plan-anchor="same">two</p>',
+            '<figure data-plan-anchor="bad anchor"><svg></svg></figure>',
+            '<figure data-plan-anchor="dup"><svg></svg></figure>'
+            '<p data-plan-anchor="dup">text</p>',
         )
 
         for source in invalid_sources:

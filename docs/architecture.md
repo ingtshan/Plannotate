@@ -46,6 +46,8 @@ A fine-grained token should grant the minimum repository permissions:
 - Pull requests: read and write, for reading, creating, replying to, and deleting review comments;
 - Metadata: read-only, as required by GitHub.
 
+The same Pull requests permission covers pending-review recovery. When GitHub rejects a comment because the account already has a pending review, the viewer lists the pull request reviews, finds the caller's `PENDING` review, and either submits it (`POST .../reviews/{id}/events` with a `COMMENT` event) or deletes it (`DELETE .../reviews/{id}`) before resending the kept draft. Both actions run only on an explicit click, and deletion requires a second confirming click that states how many draft comments are removed.
+
 The token remains in `chrome.storage.local`. The plan sandbox cannot read extension storage or make GitHub requests.
 
 GitHub may reject the GraphQL thread-state mutations for a fine-grained PAT even when review-comment writes succeed. The extension detects fine-grained tokens by their documented prefix and routes resolve/reopen to the exact native GitHub discussion URL. The GitHub content script validates that the target is the current repository and pull request before navigating. Classic or OAuth tokens may use the GraphQL mutations directly; their API errors still fall back to the native thread.
@@ -69,7 +71,9 @@ The parser accepts only the documented fields and validates paths, hashes, bound
 
 Explicit `data-plan-anchor` values provide the strongest identity between versions. Other blocks use a deterministic document index plus FNV-1a text hash. Selection offsets are relative to the block text.
 
-Threads stay attached to the artifact version where they were created. Unresolved older-version threads are shown as carryover context; they are never relabeled as current-version feedback.
+Media blocks are first-class anchors: the first `img`/`svg`/`canvas` inside a `<figure data-plan-anchor="...">` inherits the figure's anchor, and an SVG's direct `<title>` child becomes its human-readable comment label. Existing sidecars are immutable, so both rules apply only to versions packaged after they were introduced.
+
+Threads stay attached to the artifact version where they were created. The review rail renders every thread in one place: current-version groups, general feedback, unresolved older-version carryover (labeled with its version), and threads whose anchors no longer exist. Carryover is never relabeled as current-version feedback.
 
 ## Release integrity
 

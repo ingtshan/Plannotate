@@ -129,7 +129,7 @@ class GitHubClient:
         return {
             "Accept": accept,
             "Authorization": "Bearer " + self.token,
-            "User-Agent": "plannotate/0.1.1",
+            "User-Agent": "plannotate/0.3.0",
             "X-GitHub-Api-Version": API_VERSION,
         }
 

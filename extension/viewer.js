@@ -13,8 +13,6 @@
     plan: document.getElementById("plan-select"),
     version: document.getElementById("version-select"),
     iframe: document.getElementById("sandbox"),
-    carryoverSection: document.getElementById("carryover-section"),
-    carryoverList: document.getElementById("carryover-list"),
     refresh: document.getElementById("refresh"),
     general: document.getElementById("general-comment"),
     closeEmbedded: document.getElementById("close-embedded"),
@@ -26,7 +24,7 @@
   const channel = crypto.randomUUID();
   const state = {
     api: null, planKeys: [], planKey: null, bundle: null,
-    allThreads: [], records: [], sandboxReady: false,
+    records: [], sandboxReady: false,
   };
 
   function setStatus(message, error) {
@@ -158,26 +156,27 @@
   }
 
   async function refreshThreads() {
-    state.allThreads = await state.api.listReviewThreads(ref);
+    const threads = await state.api.listReviewThreads(ref);
     state.records = github.normalizeThreads(
-      state.allThreads, state.planKey, state.bundle.manifest
+      threads, state.planKey, state.bundle.manifest
     ).map((record) => Object.assign({}, record, {
+      current: isCurrentArtifact(record),
       nativeThreadState: state.api.tokenKind === "fine-grained",
     }));
-    renderCarryover();
     sendRender();
-    const open = state.records.filter((item) => !item.isResolved).length;
+    const current = state.records.filter((item) => item.current);
+    const open = current.filter((item) => !item.isResolved).length;
+    const carryover = state.records.filter(
+      (item) => !item.current && !item.isResolved
+    ).length;
     setStatus(
-      "已验证 " + state.bundle.version.artifact_path + " · 未解决 " + open
-        + " / 总计 " + state.records.length
+      "已验证 " + state.bundle.version.artifact_path
+        + " · 当前版本未解决 " + open + " / " + current.length
+        + (carryover ? " · 其他版本未解决 " + carryover : "")
         + (state.api.tokenKind === "fine-grained"
           ? " · 解决/重开使用 GitHub 原生 review" : "")
     );
     hideAuthHelp();
-  }
-
-  function currentThreads() {
-    return state.records.filter(isCurrentArtifact);
   }
 
   function isCurrentArtifact(record) {
@@ -193,16 +192,8 @@
       source: "plannotate-parent", channel, type: "render",
       html: state.bundle.html,
       anchors: state.bundle.anchors.anchors,
-      threads: currentThreads(),
+      threads: state.records,
     }, "*");
-  }
-
-  function makeButton(text, action) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = text;
-    button.addEventListener("click", action);
-    return button;
   }
 
   function nativeThreadUrl(record) {
@@ -222,49 +213,6 @@
       return;
     }
     window.open(url, "_blank", "noopener");
-  }
-
-  function renderCarryover() {
-    const selected = state.bundle.version.version;
-    const items = state.records.filter(
-      (item) => !item.isResolved && !isCurrentArtifact(item)
-    );
-    elements.carryoverSection.hidden = !items.length;
-    elements.carryoverList.replaceChildren(...items.map((record) => {
-      const card = document.createElement("article");
-      card.className = "carryover-card";
-      const meta = document.createElement("div");
-      meta.className = "carryover-meta";
-      meta.textContent = "v" + String(record.metadata.version).padStart(4, "0")
-        + (record.metadata.version === selected ? " · artifact 不匹配" : "")
-        + " · " + (record.metadata.general ? "总体意见" : record.metadata.quote);
-      const body = document.createElement("p");
-      body.textContent = record.body;
-      const actions = document.createElement("div");
-      actions.className = "carryover-actions";
-      if (record.permissions.reply) {
-        const input = document.createElement("textarea");
-        input.rows = 2;
-        input.maxLength = 4000;
-        input.placeholder = "回复旧版本线程…";
-        const reply = makeButton("回复", async () => {
-          if (!input.value.trim()) return;
-          input.disabled = true;
-          reply.disabled = true;
-          await replyInline(record, input.value.trim());
-        });
-        actions.append(input, reply);
-      }
-      if (record.permissions.resolve) {
-        actions.appendChild(makeButton(
-          record.nativeThreadState ? "前往 GitHub 解决" : "解决",
-          () => record.nativeThreadState
-            ? openNativeThread(record) : mutateThread("resolve", record)
-        ));
-      }
-      card.append(meta, body, actions);
-      return card;
-    }));
   }
 
   function commentMetadata(request) {
@@ -301,9 +249,37 @@
       await refreshThreads();
     } catch (error) {
       const help = github.errorHelp(error, ref, "create");
-      sendSandboxComposerError(
-        reportError(error, "create", help), Boolean(help && help.pendingReview)
-      );
+      const message = reportError(error, "create", help);
+      if (help && help.pendingReview) return describePendingRecovery(message);
+      sendSandboxComposerError(message, null);
+    }
+  }
+
+  async function describePendingRecovery(message) {
+    let recovery = { kind: "pending-review", found: false, comments: 0 };
+    try {
+      const review = await state.api.findPendingReview(ref);
+      if (review) {
+        recovery = {
+          kind: "pending-review", found: true, comments: review.commentCount,
+        };
+      }
+    } catch (_error) { /* 保留 GitHub 原生页面兜底 */ }
+    sendSandboxComposerError(message, recovery);
+  }
+
+  async function recoverPendingReview(mode, request, body) {
+    try {
+      setStatus("正在处理未提交的 pending review…");
+      const review = await state.api.findPendingReview(ref);
+      if (review) {
+        if (mode === "submit") await state.api.submitPendingReview(ref, review.id);
+        else await state.api.deletePendingReview(ref, review.id);
+      }
+      if (request && body.trim()) return createComment(request, body);
+      await refreshThreads();
+    } catch (error) {
+      sendSandboxComposerError(reportError(error, "create"), null);
     }
   }
 
@@ -345,11 +321,11 @@
     }, "*");
   }
 
-  function sendSandboxComposerError(message, pendingReview) {
+  function sendSandboxComposerError(message, recovery) {
     if (!state.sandboxReady) return;
     elements.iframe.contentWindow.postMessage({
       source: "plannotate-parent", channel, type: "compose-error", message,
-      pendingReview: Boolean(pendingReview),
+      recovery: recovery || null,
     }, "*");
   }
 
@@ -372,6 +348,11 @@
     } else if (message.type === "open-native-thread") {
       const record = findRecord(message.threadId);
       if (record) openNativeThread(record);
+    } else if (message.type === "pending-review-recover") {
+      recoverPendingReview(
+        message.mode === "submit" ? "submit" : "discard",
+        message.request, String(message.body || "")
+      );
     } else if (message.type === "open-pending-review") {
       if (query.get("embedded") === "1") {
         parent.postMessage({ source: "plannotate-viewer", type: message.type }, "*");

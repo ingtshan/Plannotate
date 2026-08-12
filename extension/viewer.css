@@ -32,15 +32,10 @@ a { color: var(--accent); }
 .status { min-height: 20px; margin: 8px 18px; color: var(--muted); font-size: 13px; }
 .status.error, .error { color: var(--danger); }
 #sandbox { width: 100%; flex: 1; min-height: calc(100vh - 105px); border: 0; background: #fff; }
-.auth-panel, .carryover { margin: 12px 18px; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); }
-.auth-panel h2, .carryover h2 { margin: 0 0 8px; font-size: 16px; }
+.auth-panel { margin: 12px 18px; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); }
+.auth-panel h2 { margin: 0 0 8px; font-size: 16px; }
 .auth-panel ul { margin: 8px 0 14px; padding-left: 22px; }
 .auth-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.carryover-card { margin: 8px 0; padding: 10px; border: 1px solid var(--border); border-radius: 7px; background: #fff; }
-.carryover-card p { margin: 5px 0; white-space: pre-wrap; }
-.carryover-meta { color: var(--muted); font-size: 12px; }
-.carryover-actions { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; margin-top: 8px; align-items: end; }
-.carryover-actions textarea { min-height: 58px; padding: 8px; resize: vertical; }
 body.embedded .viewer-header { border-radius: 0; }
 
 .settings-shell { max-width: 860px; margin: 48px auto 80px; padding: 0 24px; }
@@ -99,7 +94,7 @@ body.embedded .viewer-header { border-radius: 0; }
   .viewer-header { background: rgba(13,17,23,.96); }
   button { color: #e6edf3; background: #21262d; }
   button:hover { background: #30363d; }
-  .viewer-controls select, .carryover-card, .permission-table,
+  .viewer-controls select, .permission-table,
   .verification-status:not(:empty) { color: #e6edf3; background: #0d1117; }
   .button-link { color: #e6edf3; background: #21262d; }
   .callout { color: #e3b341; background: #2d2400; }

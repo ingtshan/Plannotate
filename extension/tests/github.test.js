@@ -142,6 +142,57 @@ test("turns an existing pending review conflict into actionable recovery", async
   });
 });
 
+test("finds, submits, and deletes the viewer's pending review", async () => {
+  const calls = [];
+  const responses = [
+    [{ id: 77, state: "COMMENTED" }, { id: 99, state: "PENDING" }],
+    [{ id: 1 }, { id: 2 }],
+    { id: 99, state: "COMMENTED" },
+  ];
+  const api = new github.GitHubApi("github_pat_example", {
+    apiUrl: "https://api.github.test",
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      const body = responses.shift();
+      return new Response(body === undefined ? null : JSON.stringify(body), {
+        status: body === undefined ? 204 : 200,
+        headers: { "content-type": "application/json" },
+      });
+    },
+  });
+  const ref = { owner: "team", repo: "plans", number: 7 };
+  const pending = await api.findPendingReview(ref);
+  assert.deepEqual(pending, { id: 99, commentCount: 2 });
+  assert.match(calls[0].url, /\/repos\/team\/plans\/pulls\/7\/reviews\?per_page=100/);
+  assert.match(calls[1].url, /\/reviews\/99\/comments\?per_page=100$/);
+  await api.submitPendingReview(ref, pending.id);
+  assert.equal(
+    calls[2].url,
+    "https://api.github.test/repos/team/plans/pulls/7/reviews/99/events"
+  );
+  assert.deepEqual(JSON.parse(calls[2].options.body), { event: "COMMENT" });
+  await api.deletePendingReview(ref, pending.id);
+  assert.equal(calls[3].options.method, "DELETE");
+  assert.equal(
+    calls[3].url, "https://api.github.test/repos/team/plans/pulls/7/reviews/99"
+  );
+  await assert.rejects(api.submitPendingReview(ref, "99"), /review id/);
+  await assert.rejects(api.deletePendingReview(ref, 0), /review id/);
+});
+
+test("reports no pending review when the viewer has none", async () => {
+  const api = new github.GitHubApi("token", {
+    apiUrl: "https://api.github.test",
+    fetchImpl: async () => new Response(
+      JSON.stringify([{ id: 5, state: "COMMENTED" }]),
+      { status: 200, headers: { "content-type": "application/json" } }
+    ),
+  });
+  assert.equal(
+    await api.findPendingReview({ owner: "a", repo: "b", number: 1 }), null
+  );
+});
+
 test("loads a head-pinned bundle and verifies artifact plus sidecar", async () => {
   const fixture = bundleFixture();
   const paths = [];
