@@ -6,19 +6,16 @@
   const elements = {
     status: document.getElementById("status"),
     authPanel: document.getElementById("auth-panel"),
+    authTitle: document.getElementById("auth-title"),
+    authMessage: document.getElementById("auth-message"),
+    authSteps: document.getElementById("auth-steps"),
+    authCreateToken: document.getElementById("auth-create-token"),
     plan: document.getElementById("plan-select"),
     version: document.getElementById("version-select"),
     iframe: document.getElementById("sandbox"),
-    carryoverSection: document.getElementById("carryover-section"),
-    carryoverList: document.getElementById("carryover-list"),
-    dialog: document.getElementById("composer"),
-    dialogTitle: document.getElementById("composer-title"),
-    dialogQuote: document.getElementById("composer-quote"),
-    dialogBody: document.getElementById("composer-body"),
-    dialogError: document.getElementById("composer-error"),
-    dialogSubmit: document.getElementById("composer-submit"),
     refresh: document.getElementById("refresh"),
     general: document.getElementById("general-comment"),
+    closeEmbedded: document.getElementById("close-embedded"),
   };
   const query = new URLSearchParams(location.search);
   const ref = {
@@ -27,12 +24,63 @@
   const channel = crypto.randomUUID();
   const state = {
     api: null, planKeys: [], planKey: null, bundle: null,
-    allThreads: [], records: [], sandboxReady: false, composer: null,
+    records: [], sandboxReady: false,
   };
 
   function setStatus(message, error) {
     elements.status.textContent = message || "";
     elements.status.classList.toggle("error", Boolean(error));
+  }
+
+  function showAuthHelp(help) {
+    elements.authTitle.textContent = help.title;
+    elements.authMessage.textContent = help.summary;
+    elements.authSteps.replaceChildren(...help.steps.map((value) => {
+      const item = document.createElement("li");
+      item.textContent = value;
+      return item;
+    }));
+    elements.authCreateToken.hidden = !help.tokenUrl;
+    if (help.tokenUrl) elements.authCreateToken.href = help.tokenUrl;
+    elements.authPanel.hidden = false;
+  }
+
+  function hideAuthHelp() {
+    elements.authPanel.hidden = true;
+  }
+
+  function reportError(error, knownHelp) {
+    const help = knownHelp || github.errorHelp(error, ref);
+    if (help) {
+      if (help.pendingReview) hideAuthHelp();
+      else showAuthHelp(help);
+      setStatus(help.summary, true);
+      return help.summary;
+    }
+    setStatus(error.message, true);
+    return error.message;
+  }
+
+  function missingTokenHelp() {
+    return {
+      title: "尚未配置 GitHub token",
+      summary: "Plannotate 需要代表你读取 plan，并写入 GitHub 原生 PR review thread。",
+      steps: [
+        "Resource owner：" + ref.owner,
+        "Repository access：包含 " + ref.owner + "/" + ref.repo,
+        "Contents = Read-only；Pull requests = Read and write；Metadata = Read-only",
+      ],
+      tokenUrl: github.tokenTemplateUrl(ref.owner),
+    };
+  }
+
+  async function rememberContext() {
+    await chrome.storage.local.set({ lastPullContext: ref });
+  }
+
+  async function openSettings() {
+    try { await rememberContext(); } catch (_error) { /* settings still opens */ }
+    await chrome.runtime.openOptionsPage();
   }
 
   function validRef() {
@@ -48,15 +96,20 @@
 
   async function init() {
     if (!validRef()) return setStatus("缺少有效的 GitHub PR 上下文。", true);
+    if (query.get("embedded") === "1") {
+      document.body.classList.add("embedded");
+      elements.closeEmbedded.hidden = false;
+    }
     const prUrl = "https://github.com/" + ref.owner + "/" + ref.repo + "/pull/" + ref.number;
     const link = document.getElementById("pr-link");
     link.href = prUrl;
     link.textContent = ref.owner + "/" + ref.repo + "#" + ref.number;
+    rememberContext().catch(() => {});
     elements.iframe.src = chrome.runtime.getURL("sandbox.html")
       + "?channel=" + encodeURIComponent(channel);
     const values = await chrome.storage.local.get(["githubToken"]);
     if (!values.githubToken) {
-      elements.authPanel.hidden = false;
+      showAuthHelp(missingTokenHelp());
       elements.iframe.hidden = true;
       return setStatus("尚未配置 GitHub token。", true);
     }
@@ -74,7 +127,7 @@
       state.planKey = state.planKeys[0];
       await loadBundle();
     } catch (error) {
-      setStatus(error.message, true);
+      reportError(error);
     }
   }
 
@@ -98,26 +151,26 @@
       elements.refresh.disabled = false;
       elements.general.disabled = false;
     } catch (error) {
-      setStatus(error.message, true);
+      reportError(error);
     }
   }
 
   async function refreshThreads() {
-    state.allThreads = await state.api.listReviewThreads(ref);
+    const threads = await state.api.listReviewThreads(ref);
     state.records = github.normalizeThreads(
-      state.allThreads, state.planKey, state.bundle.manifest
-    );
-    renderCarryover();
+      threads, state.planKey, state.bundle.manifest
+    ).map((record) => Object.assign({}, record, {
+      current: isCurrentArtifact(record),
+    }));
     sendRender();
-    const open = state.records.filter((item) => !item.isResolved).length;
+    const current = state.records.filter((item) => item.current).length;
+    const history = state.records.length - current;
     setStatus(
-      "已验证 " + state.bundle.version.artifact_path + " · 未解决 " + open
-        + " / 总计 " + state.records.length
+      "已验证 " + state.bundle.version.artifact_path
+        + " · 当前版本 " + current + " 条评论"
+        + (history ? " · 历史 " + history + " 条" : "")
     );
-  }
-
-  function currentThreads() {
-    return state.records.filter(isCurrentArtifact);
+    hideAuthHelp();
   }
 
   function isCurrentArtifact(record) {
@@ -133,69 +186,8 @@
       source: "plannotate-parent", channel, type: "render",
       html: state.bundle.html,
       anchors: state.bundle.anchors.anchors,
-      threads: currentThreads(),
+      threads: state.records,
     }, "*");
-  }
-
-  function makeButton(text, action) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = text;
-    button.addEventListener("click", action);
-    return button;
-  }
-
-  function renderCarryover() {
-    const selected = state.bundle.version.version;
-    const items = state.records.filter(
-      (item) => !item.isResolved && !isCurrentArtifact(item)
-    );
-    elements.carryoverSection.hidden = !items.length;
-    elements.carryoverList.replaceChildren(...items.map((record) => {
-      const card = document.createElement("article");
-      card.className = "carryover-card";
-      const meta = document.createElement("div");
-      meta.className = "carryover-meta";
-      meta.textContent = "v" + String(record.metadata.version).padStart(4, "0")
-        + (record.metadata.version === selected ? " · artifact 不匹配" : "")
-        + " · " + (record.metadata.general ? "总体意见" : record.metadata.quote);
-      const body = document.createElement("p");
-      body.textContent = record.body;
-      const actions = document.createElement("div");
-      actions.className = "carryover-actions";
-      if (record.permissions.reply) {
-        actions.appendChild(makeButton("回复", () => openReply(record)));
-      }
-      if (record.permissions.resolve) {
-        actions.appendChild(makeButton("解决", () => mutateThread("resolve", record)));
-      }
-      card.append(meta, body, actions);
-      return card;
-    }));
-  }
-
-  function openComposer(request) {
-    if (!state.bundle) return setStatus("plan artifact 尚未加载完成。", true);
-    state.composer = { type: "comment", request };
-    elements.dialogTitle.textContent = request.general ? "发表总体意见" : "评论此处";
-    const selection = request.selection && "\n高亮：“" + request.selection.text + "”";
-    elements.dialogQuote.textContent = request.general
-      ? "针对当前版本的总体意见"
-      : "块：" + request.anchor.quote + (selection || "");
-    elements.dialogBody.value = "";
-    elements.dialogError.textContent = "";
-    elements.dialog.showModal();
-    elements.dialogBody.focus();
-  }
-
-  function openReply(record) {
-    state.composer = { type: "reply", record };
-    elements.dialogTitle.textContent = "回复线程";
-    elements.dialogQuote.textContent = record.body;
-    elements.dialogBody.value = "";
-    elements.dialogError.textContent = "";
-    elements.dialog.showModal();
-    elements.dialogBody.focus();
   }
 
   function commentMetadata(request) {
@@ -218,44 +210,60 @@
     };
   }
 
-  async function submitComposer() {
-    const body = elements.dialogBody.value;
-    if (!body.trim() || !state.composer) return;
-    elements.dialogSubmit.disabled = true;
-    elements.dialogError.textContent = "";
+  async function createComment(request, body) {
+    if (!body.trim() || !request || !state.bundle) return;
     try {
-      if (state.composer.type === "reply") {
-        await state.api.replyThread(state.composer.record.threadId, body.trim());
-      } else {
-        const request = state.composer.request;
-        const metadata = commentMetadata(request);
-        await state.api.createReviewComment(ref, {
-          body: protocol.buildCommentBody(body, metadata),
-          commitSha: state.bundle.headSha,
-          path: state.bundle.version.artifact_path,
-          line: metadata.line,
-          fileLevel: metadata.general,
-        });
-      }
-      elements.dialog.close();
-      state.composer = null;
+      const metadata = commentMetadata(request);
+      await state.api.createReviewComment(ref, {
+        body: protocol.buildCommentBody(body, metadata),
+        commitSha: state.bundle.headSha,
+        path: state.bundle.version.artifact_path,
+        line: metadata.line,
+        fileLevel: metadata.general,
+      });
       await refreshThreads();
     } catch (error) {
-      elements.dialogError.textContent = error.message;
-    } finally {
-      elements.dialogSubmit.disabled = false;
+      const help = github.errorHelp(error, ref);
+      const message = reportError(error, help);
+      if (help && help.pendingReview) return describePendingRecovery(message);
+      sendSandboxComposerError(message, null);
     }
   }
 
-  async function mutateThread(action, record, notifySandbox) {
+  async function describePendingRecovery(message) {
+    let recovery = { kind: "pending-review", found: false, comments: 0 };
     try {
-      if (action === "resolve") await state.api.resolveThread(record.threadId);
-      else if (action === "reopen") await state.api.reopenThread(record.threadId);
-      else if (action === "delete") await state.api.deleteComment(record.root.id);
+      const review = await state.api.findPendingReview(ref);
+      if (review) {
+        recovery = {
+          kind: "pending-review", found: true, comments: review.commentCount,
+        };
+      }
+    } catch (_error) { /* 保留 GitHub 原生页面兜底 */ }
+    sendSandboxComposerError(message, recovery);
+  }
+
+  async function recoverPendingReview(mode, request, body) {
+    try {
+      setStatus("正在处理未提交的 pending review…");
+      const review = await state.api.findPendingReview(ref);
+      if (review) {
+        if (mode === "submit") await state.api.submitPendingReview(ref, review.id);
+        else await state.api.deletePendingReview(ref, review.id);
+      }
+      if (request && body.trim()) return createComment(request, body);
       await refreshThreads();
     } catch (error) {
-      setStatus(error.message, true);
-      if (notifySandbox) sendSandboxMutationError(record.threadId, error.message);
+      sendSandboxComposerError(reportError(error), null);
+    }
+  }
+
+  async function deleteThread(record) {
+    try {
+      await state.api.deleteComment(ref, record.root.databaseId);
+      await refreshThreads();
+    } catch (error) {
+      sendSandboxMutationError(record.threadId, reportError(error));
     }
   }
 
@@ -264,8 +272,7 @@
       await state.api.replyThread(record.threadId, body);
       await refreshThreads();
     } catch (error) {
-      setStatus(error.message, true);
-      sendSandboxMutationError(record.threadId, error.message);
+      sendSandboxMutationError(record.threadId, reportError(error));
     }
   }
 
@@ -274,6 +281,14 @@
     elements.iframe.contentWindow.postMessage({
       source: "plannotate-parent", channel, type: "mutation-error",
       threadId, message,
+    }, "*");
+  }
+
+  function sendSandboxComposerError(message, recovery) {
+    if (!state.sandboxReady) return;
+    elements.iframe.contentWindow.postMessage({
+      source: "plannotate-parent", channel, type: "compose-error", message,
+      recovery: recovery || null,
     }, "*");
   }
 
@@ -288,14 +303,29 @@
     if (message.type === "ready") {
       state.sandboxReady = true;
       sendRender();
-    } else if (message.type === "compose") {
-      openComposer(message);
+    } else if (message.type === "comment") {
+      createComment(message.request, message.body || "");
     } else if (message.type === "reply") {
       const record = findRecord(message.threadId);
       if (record) replyInline(record, message.body || "");
-    } else if (["resolve", "reopen", "delete"].includes(message.type)) {
+    } else if (message.type === "pending-review-recover") {
+      recoverPendingReview(
+        message.mode === "submit" ? "submit" : "discard",
+        message.request, String(message.body || "")
+      );
+    } else if (message.type === "open-pending-review") {
+      if (query.get("embedded") === "1") {
+        parent.postMessage({ source: "plannotate-viewer", type: message.type }, "*");
+      } else {
+        window.open(
+          "https://github.com/" + ref.owner + "/" + ref.repo + "/pull/"
+            + ref.number + "/files",
+          "_blank", "noopener"
+        );
+      }
+    } else if (message.type === "delete") {
       const record = findRecord(message.threadId);
-      if (record) mutateThread(message.type, record, true);
+      if (record) deleteThread(record);
     }
   });
 
@@ -308,24 +338,35 @@
     Number(elements.version.value) || undefined
   ));
   elements.general.addEventListener(
-    "click", () => openComposer({ general: true, anchor: null, selection: null })
+    "click", () => elements.iframe.contentWindow.postMessage({
+      source: "plannotate-parent", channel, type: "open-composer",
+      request: { general: true, anchor: null, selection: null },
+    }, "*")
   );
   document.getElementById("open-settings").addEventListener(
-    "click", () => chrome.runtime.openOptionsPage()
+    "click", () => openSettings().catch((error) => setStatus(error.message, true))
   );
   document.getElementById("auth-settings").addEventListener(
-    "click", () => chrome.runtime.openOptionsPage()
+    "click", () => openSettings().catch((error) => setStatus(error.message, true))
   );
-  document.getElementById("composer-form").addEventListener("submit", (event) => {
-    event.preventDefault();
-    submitComposer();
-  });
-  ["composer-close", "composer-cancel"].forEach((id) => {
-    document.getElementById(id).addEventListener("click", () => {
-      state.composer = null;
-      elements.dialog.close();
-    });
+  elements.closeEmbedded.addEventListener("click", () => {
+    parent.postMessage({ source: "plannotate-viewer", type: "close" }, "*");
   });
 
-  init().catch((error) => setStatus(error.message, true));
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "local" || !changes.githubToken) return;
+    const token = changes.githubToken.newValue;
+    if (!token) {
+      state.api = null;
+      elements.iframe.hidden = true;
+      showAuthHelp(missingTokenHelp());
+      setStatus("GitHub token 已清除。", true);
+      return;
+    }
+    state.api = new github.GitHubApi(token);
+    elements.iframe.hidden = false;
+    loadPlans();
+  });
+
+  init().catch((error) => reportError(error));
 }());

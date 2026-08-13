@@ -13,6 +13,9 @@ class ExtensionBuildTests(unittest.TestCase):
     def test_build_contains_only_production_extension_files(self):
         root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         script = os.path.join(root, "scripts", "build_extension.py")
+        source_manifest = os.path.join(root, "extension", "manifest.json")
+        with open(source_manifest, encoding="utf-8") as source:
+            release_name = "plannotate-v" + json.load(source)["version"]
         with tempfile.TemporaryDirectory() as output:
             result = subprocess.run(
                 [sys.executable, script, "--output", output],
@@ -20,7 +23,7 @@ class ExtensionBuildTests(unittest.TestCase):
             )
 
             self.assertEqual(result.returncode, 0, result.stderr)
-            release = os.path.join(output, "plannotate-v0.1.0")
+            release = os.path.join(output, release_name)
             archive_path = release + ".zip"
             with open(os.path.join(release, "manifest.json"), encoding="utf-8") as source:
                 manifest = json.load(source)
@@ -29,7 +32,7 @@ class ExtensionBuildTests(unittest.TestCase):
                 bad = [name for name in names if "/tests/" in name or name.endswith(".test.js")]
             self.assertEqual(manifest["manifest_version"], 3)
             self.assertFalse(bad)
-            self.assertIn("plannotate-v0.1.0/INSTALL.txt", names)
+            self.assertIn(release_name + "/INSTALL.txt", names)
             self.assertTrue(os.path.isfile(os.path.join(output, "SHA256SUMS.txt")))
 
 

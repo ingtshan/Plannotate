@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Plannotate v0.3 架构评审计划</title>
+  <style>
+    :root { color-scheme: light; }
+    body { margin: 0; background: #f6f8fa; }
+    .plan {
+      --ink: #1f2328; --muted: #59636e; --line: #d0d7de; --soft: #f6f8fa;
+      --blue: #0969da; --green: #1a7f37; --orange: #bc4c00; --purple: #8250df;
+      max-width: 1100px; margin: 0 auto; padding: 40px 30px 80px; color: var(--ink);
+      background: #fff; font: 16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    .plan * { box-sizing: border-box; }
+    h1,h2,h3 { line-height: 1.2; letter-spacing: -.025em; }
+    h1 { max-width: 850px; margin: 18px 0 14px; font-size: clamp(36px,6vw,62px); }
+    h2 { margin: 0 0 12px; font-size: 30px; }
+    h3 { margin: 0 0 7px; font-size: 17px; }
+    p { margin: 8px 0; }
+    code { padding: 2px 5px; border-radius: 5px; background: #eef1f4; font-size: .9em; }
+    .hero { padding: 36px; border: 1px solid #b6d4fe; border-radius: 18px; background: linear-gradient(135deg,#f3f8ff,#f5fbf8); }
+    .eyebrow { color: #0550ae; font-size: 12px; font-weight: 750; letter-spacing: .09em; text-transform: uppercase; }
+    .lede { max-width: 830px; color: #3f4b58; font-size: 19px; }
+    .meta,.legend,.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+    .meta span,.chip,.legend span { padding: 5px 9px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--muted); font-size: 12px; }
+    section { margin-top: 52px; }
+    .intro { max-width: 880px; color: var(--muted); }
+    .callout { padding: 20px 22px; border: 1px solid #f2cc60; border-radius: 12px; background: #fff8c5; }
+    .callout strong { color: #7d4e00; }
+    .review-order { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; padding: 0; list-style: none; }
+    .review-order li { padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--soft); }
+    .review-order b { display: block; margin-bottom: 6px; color: var(--blue); }
+    .diagram { margin: 22px 0 0; padding: 22px; border: 1px solid var(--line); border-radius: 14px; background: #fff; box-shadow: 0 1px 2px rgba(31,35,40,.06); }
+    .diagram header { display: flex; justify-content: space-between; gap: 20px; align-items: start; margin-bottom: 16px; }
+    .diagram header p { max-width: 700px; margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+    .diagram svg { display: block; width: 100%; height: auto; border-radius: 10px; background: #fbfcfe; }
+    .diagram figcaption { margin-top: 12px; color: var(--muted); font-size: 13px; }
+    .diagram-text { margin-top: 14px; padding: 12px 14px; border-left: 3px solid var(--blue); background: var(--soft); font-size: 14px; }
+    .box { fill: #fff; stroke: #57606a; stroke-width: 1.5; }
+    .system { fill: #ddf4ff; stroke: #0969da; }
+    .store { fill: #dafbe1; stroke: #1a7f37; }
+    .trust { fill: #fff8c5; stroke: #bf8700; }
+    .person { fill: #fbefff; stroke: #8250df; }
+    .label { fill: #1f2328; font: 700 14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    .small { fill: #57606a; font: 12px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    .edge { fill: none; stroke: #57606a; stroke-width: 1.7; marker-end: url(#arrow); }
+    .edge-trust { fill: none; stroke: #bc4c00; stroke-width: 2; stroke-dasharray: 6 5; marker-end: url(#arrow-orange); }
+    .sequence-line { stroke: #8c959f; stroke-dasharray: 5 5; }
+    .message { stroke: #0969da; stroke-width: 1.7; marker-end: url(#arrow); }
+    .decision-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+    .decision { padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .decision .status { display: inline-block; margin-bottom: 8px; padding: 2px 7px; border-radius: 999px; color: #116329; background: #dafbe1; font-size: 11px; font-weight: 750; }
+    table { width: 100%; margin-top: 18px; border-collapse: separate; border-spacing: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; }
+    th,td { padding: 12px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+    th { background: var(--soft); color: #424a53; font-size: 13px; }
+    tr:last-child td { border-bottom: 0; }
+    .quality td:first-child,.risk td:first-child { font-weight: 700; }
+    .steps { display: grid; grid-template-columns: 100px 1fr; gap: 0 18px; }
+    .steps dt,.steps dd { padding: 13px 0; border-top: 1px solid var(--line); }
+    .steps dt { color: var(--blue); font-weight: 750; }
+    .steps dd { margin: 0; }
+    .checklist { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0; list-style: none; }
+    .checklist li { padding: 13px 15px 13px 42px; position: relative; border: 1px solid var(--line); border-radius: 10px; }
+    .checklist li::before { content: "✓"; position: absolute; left: 15px; color: var(--green); font-weight: 800; }
+    blockquote { margin: 24px 0 0; padding: 17px 20px; border-left: 4px solid var(--purple); background: #fbefff; }
+    footer { margin-top: 54px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+    @media (max-width: 780px) {
+      .plan { padding: 18px 14px 50px; }
+      .hero { padding: 25px 20px; }
+      .review-order,.decision-grid,.checklist { grid-template-columns: 1fr; }
+      .diagram { padding: 14px; overflow-x: auto; }
+      .diagram svg { min-width: 760px; }
+    }
+  </style>
+</head>
+<body>
+<main class="plan">
+  <header class="hero">
+    <div class="eyebrow">Plannotate · dogfood iteration 5 · architecture review</div>
+    <h1 data-plan-anchor="plan-title">把 plan review 变成 PR 里的原生工作流</h1>
+    <p class="lede" data-plan-anchor="plan-thesis">本轮修正评审层的心智模型：plan 评论是版本化历史，不是待办——UI 移除解决/重开；块与评论卡片双向联动，rail 按文档顺序组织；信息密度为 400px rail 重新设计，杜绝截断。plan 保持原貌，GitHub 仍是唯一事实源。</p>
+    <div class="meta"><span>Owner: maintainers</span><span>Status: implement in this PR</span><span>Version: v0005</span><span>Source: examples/plannotate-dogfood.html</span></div>
+  </header>
+
+  <section class="callout" aria-labelledby="finding-title">
+    <h2 id="finding-title" data-plan-anchor="round-four-finding">第四轮 dogfood 的三条结论</h2>
+    <p data-plan-anchor="history-not-todo-finding"><strong>评论是版本化历史，不是待办。</strong>plan 的回应单位是下一个版本，thread 的“解决”语义与之重复。UI 移除解决/重开与“前往 GitHub 解决”；线程按“当前分组 ＋ 历史 · vNNNN”呈现，thread 状态留给 CLI 自动化。</p>
+    <p data-plan-anchor="linkage-finding"><strong>位置与卡片必须双向联动。</strong>rail 分组按块的文档顺序排列；点击有评论的块，rail 滚动至对应组并闪烁；悬停时块与组互相高亮；组标题与历史卡片引用可回跳原块。</p>
+    <p data-plan-anchor="density-finding"><strong>信息密度要为 400px rail 设计。</strong>块引用只在组标题出现一次，卡片不再重复；回复框与按钮分行排列不挤压；组标题最多两行；composer 移到 rail 左侧，不再遮挡卡片。</p>
+  </section>
+
+  <section aria-labelledby="review-order-title">
+    <h2 id="review-order-title" data-plan-anchor="review-order">建议评审顺序</h2>
+    <p class="intro">GitHub 建议给 reviewer 明确说明为什么改、改了什么、应重点看哪里。本 plan 按四个问题组织阅读，既降低人类认知负荷，也为 LLM 提供稳定的检索顺序。</p>
+    <ol class="review-order">
+      <li data-plan-anchor="review-step-context"><b>01 · Scope</b>系统边界与唯一事实源是否正确？</li>
+      <li data-plan-anchor="review-step-runtime"><b>02 · Runtime</b>读取、校验、评论的链路是否闭环？</li>
+      <li data-plan-anchor="review-step-decisions"><b>03 · Decisions</b>选项、取舍和后果是否明确？</li>
+      <li data-plan-anchor="review-step-quality"><b>04 · Quality</b>验收是否可测、风险是否可控？</li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="context-title">
+    <h2 id="context-title" data-plan-anchor="system-context">C4 L1 · 系统上下文</h2>
+    <p class="intro">目的：说明 Plannotate 在 GitHub 协作环境中的边界。图中每条关系均标注方向与协议；虚线代表不可信内容跨越沙箱边界。</p>
+    <figure class="diagram" data-plan-anchor="context-diagram">
+      <header><div><h3>System Context · Plan review in GitHub PR</h3><p>范围是浏览器扩展和 CLI；GitHub 承担身份、仓库与 review thread 持久化。</p></div><span class="chip">C4 · Level 1</span></header>
+      <svg viewBox="0 0 980 420" role="img" aria-labelledby="context-svg-title context-svg-desc">
+        <title id="context-svg-title">Plannotate 系统上下文图</title>
+        <desc id="context-svg-desc">作者提交计划，评审者通过浏览器扩展读取并评论，LLM 通过 CLI 拉取评论迭代计划，扩展和 CLI 都直接调用 GitHub。</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#57606a"/></marker>
+          <marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#bc4c00"/></marker>
+        </defs>
+        <rect class="person" x="30" y="55" width="190" height="90" rx="12"/><text class="label" x="125" y="88" text-anchor="middle">Plan author</text><text class="small" x="125" y="112" text-anchor="middle">提交 source + immutable HTML</text>
+        <rect class="person" x="30" y="260" width="190" height="90" rx="12"/><text class="label" x="125" y="293" text-anchor="middle">Human reviewer</text><text class="small" x="125" y="317" text-anchor="middle">阅读、评论、解决线程</text>
+        <rect class="system" x="365" y="40" width="250" height="110" rx="12"/><text class="label" x="490" y="76" text-anchor="middle">GitHub Pull Request</text><text class="small" x="490" y="101" text-anchor="middle">Git objects + native review threads</text><text class="small" x="490" y="122" text-anchor="middle">Source of truth</text>
+        <rect class="system" x="365" y="245" width="250" height="120" rx="12"/><text class="label" x="490" y="280" text-anchor="middle">Plannotate Extension</text><text class="small" x="490" y="305" text-anchor="middle">PR inline workspace + sandbox</text><text class="small" x="490" y="327" text-anchor="middle">No application server</text>
+        <rect class="person" x="760" y="55" width="190" height="90" rx="12"/><text class="label" x="855" y="88" text-anchor="middle">LLM / agent</text><text class="small" x="855" y="112" text-anchor="middle">理解反馈并生成下一版</text>
+        <rect class="system" x="760" y="260" width="190" height="90" rx="12"/><text class="label" x="855" y="293" text-anchor="middle">Plannotate CLI</text><text class="small" x="855" y="317" text-anchor="middle">package / pull / reply</text>
+        <path class="edge" d="M220 95 H365"/><text class="small" x="292" y="83" text-anchor="middle">git push · SSH/HTTPS</text>
+        <path class="edge" d="M365 110 C300 150 285 245 220 290"/><text class="small" x="280" y="202" text-anchor="middle">PR UI</text>
+        <path class="edge" d="M220 305 H365"/><text class="small" x="292" y="293" text-anchor="middle">Ego Lite / Chromium UI</text>
+        <path class="edge" d="M490 245 V150"/><text class="small" x="510" y="205">REST + GraphQL</text>
+        <path class="edge" d="M760 305 H615"/><text class="small" x="687" y="293" text-anchor="middle">local commands</text>
+        <path class="edge" d="M855 260 V145"/><text class="small" x="873" y="205">REST + GraphQL</text>
+        <path class="edge" d="M760 100 H615"/><text class="small" x="687" y="88" text-anchor="middle">PR context + comments</text>
+      </svg>
+      <figcaption>图例：紫色＝人/Agent；蓝色＝本系统或外部软件系统；实线箭头＝调用或数据流，标签给出协议。</figcaption>
+      <p class="diagram-text" data-plan-anchor="context-machine-summary"><strong>LLM-readable summary:</strong> Plannotate has two clients, Extension and CLI. Both read immutable artifacts and native review threads from GitHub. No Plannotate server persists token, plan, identity, or comments.</p>
+    </figure>
+  </section>
+
+  <section aria-labelledby="container-title">
+    <h2 id="container-title" data-plan-anchor="container-architecture">C4 L2 · 扩展容器与信任边界</h2>
+    <p class="intro">目的：让安全与实现 reviewer 看清哪段代码能接触 token，哪段代码只处理不可信 plan。评论 rail 与 plan 视觉分栏，但仍保持同一 review 上下文。</p>
+    <figure class="diagram" data-plan-anchor="container-diagram">
+      <header><div><h3>Container Diagram · Browser extension</h3><p>所有 plan 内容进入 sandbox；GitHub API 只能由 extension page 调用。</p></div><span class="chip">C4 · Level 2</span></header>
+      <svg viewBox="0 0 980 470" role="img" aria-labelledby="container-svg-title container-svg-desc">
+        <title id="container-svg-title">浏览器扩展容器与信任边界图</title>
+        <desc id="container-svg-desc">GitHub PR 内容脚本创建内嵌工作区，viewer 读取 GitHub，sandbox 渲染 plan，评论 rail 与 plan 分列，token 仅位于扩展存储和 viewer。</desc>
+        <defs><marker id="arrow2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#57606a"/></marker><marker id="arrow-orange2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#bc4c00"/></marker></defs>
+        <rect class="system" x="30" y="50" width="220" height="100" rx="12"/><text class="label" x="140" y="83" text-anchor="middle">GitHub PR page</text><text class="small" x="140" y="108" text-anchor="middle">native navigation + content</text><text class="small" x="140" y="130" text-anchor="middle">github.com</text>
+        <rect class="system" x="330" y="50" width="260" height="100" rx="12"/><text class="label" x="460" y="83" text-anchor="middle">Content script</text><text class="small" x="460" y="108" text-anchor="middle">inject Plan review tab + iframe</text><text class="small" x="460" y="130" text-anchor="middle">no token access</text>
+        <rect class="store" x="710" y="50" width="230" height="100" rx="12"/><text class="label" x="825" y="83" text-anchor="middle">chrome.storage.local</text><text class="small" x="825" y="108" text-anchor="middle">fine-grained GitHub token</text><text class="small" x="825" y="130" text-anchor="middle">extension origin only</text>
+        <rect class="system" x="330" y="235" width="260" height="120" rx="12"/><text class="label" x="460" y="270" text-anchor="middle">Viewer / Orchestrator</text><text class="small" x="460" y="295" text-anchor="middle">verify SHA chain + GitHub API</text><text class="small" x="460" y="317" text-anchor="middle">comments + permissions</text>
+        <rect class="trust" x="30" y="235" width="220" height="170" rx="12"/><text class="label" x="140" y="270" text-anchor="middle">Sandbox renderer</text><text class="small" x="140" y="297" text-anchor="middle">untrusted plan HTML</text><text class="small" x="140" y="319" text-anchor="middle">no network / form / same-origin</text><rect class="box" x="55" y="340" width="80" height="42" rx="8"/><text class="small" x="95" y="365" text-anchor="middle">Plan</text><rect class="box" x="145" y="340" width="80" height="42" rx="8"/><text class="small" x="185" y="365" text-anchor="middle">Review rail</text>
+        <rect class="system" x="710" y="245" width="230" height="100" rx="12"/><text class="label" x="825" y="278" text-anchor="middle">GitHub API</text><text class="small" x="825" y="303" text-anchor="middle">Contents + review threads</text><text class="small" x="825" y="325" text-anchor="middle">api.github.com</text>
+        <path d="M250 100 H330" fill="none" stroke="#57606a" stroke-width="1.7" marker-end="url(#arrow2)"/><text class="small" x="290" y="88" text-anchor="middle">DOM</text>
+        <path d="M460 150 V235" fill="none" stroke="#57606a" stroke-width="1.7" marker-end="url(#arrow2)"/><text class="small" x="480" y="196">iframe URL</text>
+        <path d="M710 100 C650 100 650 260 590 275" fill="none" stroke="#57606a" stroke-width="1.7" marker-end="url(#arrow2)"/><text class="small" x="655" y="190" text-anchor="middle">storage API</text>
+        <path d="M590 295 H710" fill="none" stroke="#57606a" stroke-width="1.7" marker-end="url(#arrow2)"/><text class="small" x="650" y="282" text-anchor="middle">HTTPS</text>
+        <path d="M330 295 H250" fill="none" stroke="#bc4c00" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow-orange2)"/><text class="small" x="290" y="282" text-anchor="middle">postMessage</text>
+      </svg>
+      <figcaption>图例：黄色＝不可信执行边界；绿色＝敏感本地存储；虚线橙色＝经过结构校验的跨边界消息。</figcaption>
+      <p class="diagram-text" data-plan-anchor="container-machine-summary"><strong>Invariant:</strong> plan HTML never gains GitHub credentials or network access. Review UI is a sibling rail, not injected into the plan DOM. The viewer validates manifest → artifact → anchors before rendering.</p>
+    </figure>
+  </section>
+
+  <section aria-labelledby="runtime-title">
+    <h2 id="runtime-title" data-plan-anchor="review-runtime">Runtime · 打开与评论时序</h2>
+    <p class="intro">C4 静态图之外补一个关键运行场景：Reviewer 从 PR 进入 plan review，查看器校验 artifact，再把评论写回 GitHub。</p>
+    <figure class="diagram" data-plan-anchor="runtime-diagram">
+      <header><div><h3>Dynamic diagram · Review one plan block</h3><p>编号是执行顺序；所有读取都绑定 PR head SHA。</p></div><span class="chip">Runtime scenario</span></header>
+      <svg viewBox="0 0 980 500" role="img" aria-labelledby="runtime-svg-title runtime-svg-desc">
+        <title id="runtime-svg-title">Plan review 运行时序图</title><desc id="runtime-svg-desc">评审者打开内嵌工作区，viewer 读取 PR 文件和 manifest，验证 SHA，sandbox 渲染，评审者发表评论，viewer 写入 GitHub review thread。</desc>
+        <defs><marker id="arrow3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#0969da"/></marker></defs>
+        <text class="label" x="90" y="35" text-anchor="middle">Reviewer</text><text class="label" x="310" y="35" text-anchor="middle">PR tab</text><text class="label" x="530" y="35" text-anchor="middle">Viewer</text><text class="label" x="750" y="35" text-anchor="middle">GitHub API</text><text class="label" x="910" y="35" text-anchor="middle">Sandbox</text>
+        <line class="sequence-line" x1="90" y1="50" x2="90" y2="470"/><line class="sequence-line" x1="310" y1="50" x2="310" y2="470"/><line class="sequence-line" x1="530" y1="50" x2="530" y2="470"/><line class="sequence-line" x1="750" y1="50" x2="750" y2="470"/><line class="sequence-line" x1="910" y1="50" x2="910" y2="470"/>
+        <line class="message" x1="90" y1="85" x2="310" y2="85" marker-end="url(#arrow3)"/><text class="small" x="200" y="74" text-anchor="middle">1. choose Plan review</text>
+        <line class="message" x1="310" y1="135" x2="530" y2="135" marker-end="url(#arrow3)"/><text class="small" x="420" y="124" text-anchor="middle">2. embed viewer with PR context</text>
+        <line class="message" x1="530" y1="185" x2="750" y2="185" marker-end="url(#arrow3)"/><text class="small" x="640" y="174" text-anchor="middle">3. list files + pin head SHA</text>
+        <line class="message" x1="750" y1="235" x2="530" y2="235" marker-end="url(#arrow3)"/><text class="small" x="640" y="224" text-anchor="middle">4. manifest + HTML + anchors + threads</text>
+        <line class="message" x1="530" y1="285" x2="910" y2="285" marker-end="url(#arrow3)"/><text class="small" x="720" y="274" text-anchor="middle">5. verified HTML + normalized threads</text>
+        <line class="message" x1="90" y1="350" x2="910" y2="350" marker-end="url(#arrow3)"/><text class="small" x="500" y="339" text-anchor="middle">6. comment block or selection in inline composer</text>
+        <line class="message" x1="910" y1="400" x2="530" y2="400" marker-end="url(#arrow3)"/><text class="small" x="720" y="389" text-anchor="middle">7. structured comment request</text>
+        <line class="message" x1="530" y1="450" x2="750" y2="450" marker-end="url(#arrow3)"/><text class="small" x="640" y="439" text-anchor="middle">8. native line/file review comment</text>
+      </svg>
+      <figcaption>失败策略：任一 SHA、路径、anchor 数量或 metadata 不一致时停止渲染/写入，并在动作附近显示错误。第 8 步若因已有 pending review 被 GitHub 422 拒绝，viewer 经 REST 检测该 review，composer 内提交或丢弃后自动重发，草稿不丢。</figcaption>
+    </figure>
+  </section>
+
+  <section aria-labelledby="decisions-title">
+    <h2 id="decisions-title" data-plan-anchor="architecture-decisions">架构决策记录</h2>
+    <p class="intro">每条决策都包含上下文、选择与后果，避免只留下“用了什么”却没有“为什么”。</p>
+    <div class="decision-grid">
+      <article class="decision" data-plan-anchor="adr-inline-workspace"><span class="status">Accepted</span><h3>ADR-01 · PR 内嵌工作区</h3><p><b>Context:</b> 新标签页丢失 PR 导航上下文。</p><p><b>Decision:</b> 在原生 tab 列加入 Plan review，内容区切换为 extension iframe。</p><p><b>Consequence:</b> 更像 Files changed；需容忍 GitHub DOM 演进。</p></article>
+      <article class="decision" data-plan-anchor="adr-review-rail"><span class="status">Accepted</span><h3>ADR-02 · 评论独立 rail</h3><p><b>Context:</b> inline cards 会改动 plan 网格和表格。</p><p><b>Decision:</b> plan DOM 只加高亮 class，线程卡统一进入右侧 rail。</p><p><b>Consequence:</b> 保真度提高；窄屏改为上下堆叠。</p></article>
+      <article class="decision" data-plan-anchor="adr-self-contained-diagrams"><span class="status">Accepted</span><h3>ADR-03 · 自包含语义 SVG</h3><p><b>Context:</b> 远程 Mermaid/图片破坏离线与安全边界。</p><p><b>Decision:</b> 图表使用内联 SVG + title/desc + 图例 + 文本摘要。</p><p><b>Consequence:</b> 人类和 LLM 都可读；作者需维护图与文字一致。</p></article>
+      <article class="decision" data-plan-anchor="adr-pending-review"><span class="status">Accepted</span><h3>ADR-04 · pending review 原地恢复</h3><p><b>Context:</b> GitHub 限制同账号每 PR 一个 pending review，评论创建返回 422。</p><p><b>Decision:</b> viewer 用 REST reviews API 检测冲突，composer 内提供“提交并重发”“丢弃并重发”，丢弃需两步确认；保留 GitHub 页面兜底。</p><p><b>Consequence:</b> 评审者不离开 Plan review；丢弃是破坏性操作，必须显式确认。</p></article>
+      <article class="decision" data-plan-anchor="adr-rail-carryover"><span class="status">Accepted</span><h3>ADR-05 · rail 承载全部线程</h3><p><b>Context:</b> v0.2 的历史版本线程渲染在 viewer 顶部，与 rail 双轨维护。</p><p><b>Decision:</b> 当前版本、总体意见、历史未解决与无法定位线程统一由 sandbox rail 分组渲染，viewer 只负责编排与 GitHub API。</p><p><b>Consequence:</b> 单一渲染路径；rail 需要清晰的分组标题与版本徽标。</p></article>
+      <article class="decision" data-plan-anchor="adr-comments-as-history"><span class="status">Accepted</span><h3>ADR-06 · 评论即历史</h3><p><b>Context:</b> GitHub review thread 自带 resolve 状态，但 plan 评论的回应单位是下一个版本。</p><p><b>Decision:</b> 扩展 UI 不提供解决/重开/前往 GitHub；线程按版本分组为历史；CLI 保留 resolve/reopen 供自动化。</p><p><b>Consequence:</b> UI 聚焦阅读与回复；resolve 状态仍在 GitHub，只是不再驱动界面。</p></article>
+      <article class="decision" data-plan-anchor="adr-linkage"><span class="status">Accepted</span><h3>ADR-07 · 块与卡片双向联动</h3><p><b>Context:</b> 只有卡片到块的单向跳转，评审时对不上号。</p><p><b>Decision:</b> rail 组按文档顺序排序并与块以 anchor 一一对应；块的点击/悬停与组互相滚动、高亮；历史卡片在锚点存活时可回跳。</p><p><b>Consequence:</b> 多一层 DOM 事件绑定；联动只读不改 plan DOM 结构。</p></article>
+    </div>
+  </section>
+
+  <section aria-labelledby="quality-title">
+    <h2 id="quality-title" data-plan-anchor="quality-scenarios">质量场景与验收</h2>
+    <p class="intro">质量目标必须落成可观察场景。下表覆盖使用、变化与失败三类关键情境。</p>
+    <table class="quality">
+      <thead><tr><th>场景</th><th>刺激</th><th>期望响应</th><th>可测标准</th></tr></thead>
+      <tbody>
+        <tr data-plan-anchor="quality-native"><td>原生感</td><td>Reviewer 打开任意数字 PR</td><td>在 PR tab 列看到 Plan review，无悬浮按钮或新标签页</td><td>一次点击进入，返回 PR 一次点击</td></tr>
+        <tr data-plan-anchor="quality-fidelity"><td>结构保真</td><td>Plan 包含 grid、table、SVG</td><td>评论出现/消失不改变 plan DOM 的块次序和布局</td><td>渲染前后 anchor 数、块 hash、关键几何一致</td></tr>
+        <tr data-plan-anchor="quality-reviewability"><td>可评审</td><td>存在跨版本线程</td><td>当前线程按文档顺序靠近上下文，历史线程按“历史 · vNNNN”分组可回复</td><td>线程数量与 GitHub API 一致；卡片无解决/重开按钮</td></tr>
+        <tr data-plan-anchor="quality-linkage"><td>联动</td><td>点击有评论的块或组标题</td><td>rail 滚动至对应组并闪烁；plan 回滚至原块并高亮；悬停互相高亮</td><td>双向跳转均一次点击可达</td></tr>
+        <tr data-plan-anchor="quality-density"><td>密度</td><td>rail 固定 400px 宽</td><td>块引用只在组标题出现一次；按钮独立成行；composer 不遮挡卡片</td><td>无横向截断；组标题最多两行</td></tr>
+        <tr data-plan-anchor="quality-pending"><td>冲突恢复</td><td>发表评论时已存在 pending review</td><td>草稿保留，composer 内提交或丢弃该 review 后评论自动重发</td><td>422 后不丢一个字；恢复后评论出现在正确线程</td></tr>
+        <tr data-plan-anchor="quality-failure"><td>失败关闭</td><td>artifact/sidecar 被篡改</td><td>不渲染、不提交评论，错误显示在相关区域</td><td>所有 SHA/路径/anchor mismatch 测试拒绝</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section aria-labelledby="risk-title">
+    <h2 id="risk-title" data-plan-anchor="risks">风险、缓解与非目标</h2>
+    <table class="risk">
+      <thead><tr><th>风险</th><th>影响</th><th>缓解</th><th>本轮边界</th></tr></thead>
+      <tbody>
+        <tr data-plan-anchor="risk-github-dom"><td>GitHub DOM 演进</td><td>tab 或挂载点消失</td><td>语义 aria-label + href 组合定位；MutationObserver 重建；失配时不隐藏原内容</td><td>接受有限 DOM adapter，不注入 React 私有状态</td></tr>
+        <tr data-plan-anchor="risk-diagram-drift"><td>图文漂移</td><td>LLM/人类形成不同模型</td><td>每图附机器可读摘要、图例、版本和验收；review anchor 单独定位</td><td>不引入远程绘图库</td></tr>
+        <tr data-plan-anchor="risk-density"><td>信息密度过高</td><td>阅读疲劳</td><td>四步 review order；C4 只用 L1/L2；runtime 只记录关键场景</td><td>不穷举组件/类图</td></tr>
+        <tr data-plan-anchor="risk-discard"><td>误丢弃 pending review</td><td>删除评审者在 GitHub 起草的评论</td><td>丢弃按钮两步确认并显示草稿数量；提交是默认推荐路径；保留原生页面兜底</td><td>不代替用户自动丢弃，任何删除都由显式点击触发</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section aria-labelledby="delivery-title">
+    <h2 id="delivery-title" data-plan-anchor="delivery-plan">交付切片</h2>
+    <dl class="steps">
+      <dt>Slice 1</dt><dd data-plan-anchor="slice-history">去解决化：移除解决/重开/前往 GitHub 按钮与状态徽标，历史线程按版本分组；CLI 能力不变。</dd>
+      <dt>Slice 2</dt><dd data-plan-anchor="slice-linkage">双向联动：rail 组按文档顺序排序，块点击/悬停与组互相高亮滚动，历史引用回跳。</dd>
+      <dt>Slice 3</dt><dd data-plan-anchor="slice-density">密度：rail 400px、上下文单次呈现、按钮分行、组标题两行截断、composer 移出 rail 遮挡区。</dd>
+      <dt>Slice 4</dt><dd data-plan-anchor="slice-plan">发布不可变 v0005，保持 v0001–v0004 哈希不变。</dd>
+    </dl>
+  </section>
+
+  <section aria-labelledby="acceptance-title">
+    <h2 id="acceptance-title" data-plan-anchor="acceptance">本轮验收</h2>
+    <ul class="checklist">
+      <li data-plan-anchor="accept-history">线程卡片没有解决/重开/前往 GitHub 按钮与状态徽标；历史线程按“历史 · vNNNN”分组显示且可回复。</li>
+      <li data-plan-anchor="accept-linkage">点击带绿边的块，rail 滚动到对应组并闪烁；点击组标题或历史卡片引用回跳并高亮原块；悬停互亮。</li>
+      <li data-plan-anchor="accept-density">400px rail 内组标题最多两行、按钮完整可见、块引用不在卡片里重复；composer 不遮挡 rail。</li>
+      <li data-plan-anchor="accept-pending">已有 pending review 时发表评论：草稿保留，composer 内提交或丢弃后评论自动重发成功。</li>
+      <li data-plan-anchor="accept-fidelity">v0005 的三个 SVG、表格和布局保持源 HTML 原貌，评论不会插入其 DOM。</li>
+      <li data-plan-anchor="accept-immutable">manifest 追加 v0005，v0001–v0004 的 HTML 和 sidecar 哈希不变。</li>
+    </ul>
+    <blockquote data-plan-anchor="decision-request"><strong>请重点评审</strong>“评论即历史、无解决状态”是否符合你的评审心智？块与卡片的联动高亮、滚动手感是否自然？400px rail 下还有没有被截断或重复的内容？</blockquote>
+  </section>
+
+  <footer data-plan-anchor="document-contract">Document contract · audience: architect, reviewer, implementation agent · priority: high · source of truth: GitHub PR + immutable artifact · next iteration: append only.</footer>
+</main>
+</body>
+</html>

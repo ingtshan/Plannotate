@@ -1,0 +1,47 @@
+{
+  "latest": 5,
+  "plan_key": "product/dogfood",
+  "schema": "plannotate.github/v1",
+  "versions": [
+    {
+      "anchors_path": ".plannotate/product/dogfood/v0001.anchors.json",
+      "anchors_sha256": "cba4d1a2002e9b9306023da5d1efc63ffc62c4ca3c7e0e16fb6bacd5b1447e38",
+      "artifact_path": ".plannotate/product/dogfood/v0001.html",
+      "artifact_sha256": "0b1cbd5fa3f249810d0aa8b1695320abe74614b8dfd902587f45a96f9c6e24ac",
+      "created_at": "2026-08-12T04:38:59-07:00",
+      "version": 1
+    },
+    {
+      "anchors_path": ".plannotate/product/dogfood/v0002.anchors.json",
+      "anchors_sha256": "2138dbaaef6c52d82f33c9ba445f13eb45b0505ee3e94da99dbb486a80e8bdcd",
+      "artifact_path": ".plannotate/product/dogfood/v0002.html",
+      "artifact_sha256": "a9e0f13dc5fa0f334c2a4a3fa9d08239aa768afa7298c7c3de2cf8edb0895923",
+      "created_at": "2026-08-12T04:43:45-07:00",
+      "version": 2
+    },
+    {
+      "anchors_path": ".plannotate/product/dogfood/v0003.anchors.json",
+      "anchors_sha256": "c985aed0baff362b3b2af96bf137105028662c815fe66541b29ea7283c789ee9",
+      "artifact_path": ".plannotate/product/dogfood/v0003.html",
+      "artifact_sha256": "6af46f5e851f549156b4e266256d5b174bc91396aa584addc19d912d6d121b66",
+      "created_at": "2026-08-12T08:00:09-07:00",
+      "version": 3
+    },
+    {
+      "anchors_path": ".plannotate/product/dogfood/v0004.anchors.json",
+      "anchors_sha256": "b6fd921cb9b1f1d06db3d2a747c2a485cd5a970c1d83cae512438f5c37da6d9c",
+      "artifact_path": ".plannotate/product/dogfood/v0004.html",
+      "artifact_sha256": "fcf51fbd7e0d469238ebfa8921e788dbc2ece1f691b3e58c9269245255d573ff",
+      "created_at": "2026-08-12T11:58:09-07:00",
+      "version": 4
+    },
+    {
+      "anchors_path": ".plannotate/product/dogfood/v0005.anchors.json",
+      "anchors_sha256": "0ba2b7c9953b9f0b311c84bcf0f65412f6ffacfa409fc6c8871ddd23d61dae4e",
+      "artifact_path": ".plannotate/product/dogfood/v0005.html",
+      "artifact_sha256": "d1f2aed7459b3992e9ae0142f1098568cb313e7cbb275ee223436b809f48a5c4",
+      "created_at": "2026-08-12T20:42:28-07:00",
+      "version": 5
+    }
+  ]
+}

@@ -3,15 +3,24 @@
 <title>Plan sandbox</title>
 <link rel="stylesheet" href="sandbox.css">
 <div id="prg-error" role="alert" hidden></div>
-<section id="prg-general" hidden>
-  <header><h2>总体意见</h2><button id="prg-general-add" type="button">＋ 发表总体意见</button></header>
-  <div id="prg-general-threads"></div>
-</section>
-<section id="prg-orphans" hidden>
-  <h2>无法定位的线程</h2>
-  <div id="prg-orphan-threads"></div>
-</section>
-<main id="prg-plan"></main>
+<div id="prg-review-layout">
+  <main id="prg-plan"></main>
+  <aside id="prg-review-rail" aria-label="Plan review threads">
+    <header id="prg-rail-header">
+      <div><strong>Review</strong><span id="prg-rail-count">未解决 0 · 共 0</span></div>
+      <button id="prg-rail-general" type="button">＋ 总体意见</button>
+    </header>
+    <p id="prg-rail-empty">将鼠标移到段落或图表旁点击 ＋，或选择文字发表评论。</p>
+    <div id="prg-rail-threads"></div>
+  </aside>
+</div>
 <button id="prg-add" type="button" title="评论此处" hidden>＋</button>
 <button id="prg-selection" type="button" hidden>评论</button>
+<section id="prg-composer" aria-label="发表评论" hidden>
+  <header><strong id="prg-composer-title">发表评论</strong><button id="prg-composer-close" type="button" aria-label="关闭">×</button></header>
+  <p id="prg-composer-quote"></p>
+  <textarea id="prg-composer-body" rows="5" maxlength="4000" placeholder="留下建设性意见…"></textarea>
+  <p id="prg-composer-error" role="alert"></p>
+  <footer><button id="prg-composer-cancel" type="button">取消</button><button id="prg-composer-submit" type="button">发表评论</button></footer>
+</section>
 <script src="sandbox.js"></script>

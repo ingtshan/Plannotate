@@ -14,35 +14,21 @@
       <button id="refresh" type="button" disabled>刷新</button>
       <button id="general-comment" type="button" class="primary" disabled>＋ 总体意见</button>
       <button id="open-settings" type="button">设置</button>
+      <button id="close-embedded" type="button" hidden>返回 PR</button>
     </div>
   </header>
   <p id="status" class="status" role="status">正在初始化…</p>
   <section id="auth-panel" class="auth-panel" hidden>
-    <h2>需要 GitHub token</h2>
-    <p>请配置 Contents read、Pull requests read/write、Metadata read 的 fine-grained token。</p>
-    <button id="auth-settings" type="button" class="primary">打开设置</button>
-  </section>
-  <section id="carryover-section" class="carryover" hidden>
-    <h2>其他版本尚未解决</h2>
-    <div id="carryover-list"></div>
+    <h2 id="auth-title">需要 GitHub token</h2>
+    <p id="auth-message">请配置用于当前仓库的 fine-grained token。</p>
+    <ul id="auth-steps"></ul>
+    <div class="auth-actions">
+      <a id="auth-create-token" class="button-link" target="_blank" rel="noreferrer">在 GitHub 创建正确权限的 token</a>
+      <button id="auth-settings" type="button" class="primary">打开设置并检查</button>
+    </div>
   </section>
   <iframe id="sandbox" title="Plan rendered review" sandbox="allow-scripts"></iframe>
 </div>
-<dialog id="composer">
-  <form method="dialog" id="composer-form">
-    <header>
-      <h2 id="composer-title">发表评论</h2>
-      <button id="composer-close" type="button" aria-label="关闭">×</button>
-    </header>
-    <div id="composer-quote" class="composer-quote"></div>
-    <textarea id="composer-body" rows="7" maxlength="4000" required></textarea>
-    <p id="composer-error" class="error" role="alert"></p>
-    <footer>
-      <button id="composer-cancel" type="button">取消</button>
-      <button id="composer-submit" type="submit" class="primary">提交</button>
-    </footer>
-  </form>
-</dialog>
 <script src="protocol.js"></script>
 <script src="github.js"></script>
 <script src="viewer.js"></script>

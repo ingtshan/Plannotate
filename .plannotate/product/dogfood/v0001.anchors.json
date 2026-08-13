@@ -1,0 +1,319 @@
+{
+  "anchors": [
+    {
+      "anchor_id": "plan-title",
+      "block_hash": "e6fca2ba",
+      "heading_path": "",
+      "index": 0,
+      "legacy_block_id": "b0-e6fca2ba",
+      "line": 115,
+      "quote": "Plannotate 的第一次自我评审",
+      "tag": "h1"
+    },
+    {
+      "anchor_id": "plan-thesis",
+      "block_hash": "2ed8fe31",
+      "heading_path": "Plannotate 的第一次自我评审",
+      "index": 1,
+      "legacy_block_id": "b1-2ed8fe31",
+      "line": 116,
+      "quote": "我们不再另造一个评审后台：计划是 PR 中的不可变 HTML，意见是 GitHub 原生 review thread，扩展和 CLI 只是两个同等客户端。这份文档就是第一个真实样本。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "success-criteria",
+      "block_hash": "f88dce1d",
+      "heading_path": "Plannotate 的第一次自我评审",
+      "index": 2,
+      "legacy_block_id": "b2-f88dce1d",
+      "line": 121,
+      "quote": "这次 dogfood 要证明什么",
+      "tag": "h2"
+    },
+    {
+      "anchor_id": "b3-1a358e39",
+      "block_hash": "1a358e39",
+      "heading_path": "Plannotate 的第一次自我评审 > 这次 dogfood 要证明什么",
+      "index": 3,
+      "legacy_block_id": "b3-1a358e39",
+      "line": 122,
+      "quote": "成功不是“页面能打开”，而是一条从仓库到人、再回到仓库的可审计闭环。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b4-c58f5135",
+      "block_hash": "c58f5135",
+      "heading_path": "Plannotate 的第一次自我评审 > 这次 dogfood 要证明什么",
+      "index": 4,
+      "legacy_block_id": "b4-c58f5135",
+      "line": 124,
+      "quote": "无服务",
+      "tag": "h3"
+    },
+    {
+      "anchor_id": "b5-ce1a89ff",
+      "block_hash": "ce1a89ff",
+      "heading_path": "Plannotate 的第一次自我评审 > 这次 dogfood 要证明什么 > 无服务",
+      "index": 5,
+      "legacy_block_id": "b5-ce1a89ff",
+      "line": 124,
+      "quote": "扩展直连 GitHub API，没有中转 token 或复制评论的服务器。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b6-e73bd342",
+      "block_hash": "e73bd342",
+      "heading_path": "Plannotate 的第一次自我评审 > 这次 dogfood 要证明什么 > 无服务",
+      "index": 6,
+      "legacy_block_id": "b6-e73bd342",
+      "line": 125,
+      "quote": "可追溯",
+      "tag": "h3"
+    },
+    {
+      "anchor_id": "b7-239a6990",
+      "block_hash": "239a6990",
+      "heading_path": "Plannotate 的第一次自我评审 > 这次 dogfood 要证明什么 > 可追溯",
+      "index": 7,
+      "legacy_block_id": "b7-239a6990",
+      "line": 125,
+      "quote": "每个评论都绑定 PR head、artifact SHA、版本与稳定锚点。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b8-8b4921de",
+      "block_hash": "8b4921de",
+      "heading_path": "Plannotate 的第一次自我评审 > 这次 dogfood 要证明什么 > 可追溯",
+      "index": 8,
+      "legacy_block_id": "b8-8b4921de",
+      "line": 126,
+      "quote": "可迭代",
+      "tag": "h3"
+    },
+    {
+      "anchor_id": "b9-9f5619f0",
+      "block_hash": "9f5619f0",
+      "heading_path": "Plannotate 的第一次自我评审 > 这次 dogfood 要证明什么 > 可迭代",
+      "index": 9,
+      "legacy_block_id": "b9-9f5619f0",
+      "line": 126,
+      "quote": "处理意见后只追加 v0002，旧语境不被覆盖或伪装成新版。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "end-to-end-flow",
+      "block_hash": "b0c98923",
+      "heading_path": "Plannotate 的第一次自我评审 > 这次 dogfood 要证明什么 > 可迭代",
+      "index": 10,
+      "legacy_block_id": "b10-b0c98923",
+      "line": 131,
+      "quote": "端到端流程",
+      "tag": "h2"
+    },
+    {
+      "anchor_id": "trust-boundaries",
+      "block_hash": "41f91838",
+      "heading_path": "Plannotate 的第一次自我评审 > 端到端流程",
+      "index": 11,
+      "legacy_block_id": "b11-41f91838",
+      "line": 142,
+      "quote": "信任边界",
+      "tag": "h2"
+    },
+    {
+      "anchor_id": "security-principle",
+      "block_hash": "c5f0860e",
+      "heading_path": "Plannotate 的第一次自我评审 > 信任边界",
+      "index": 12,
+      "legacy_block_id": "b12-c5f0860e",
+      "line": 143,
+      "quote": "GitHub 负责身份与授权；扩展负责校验与编排；plan 始终被当作不可信内容。任何元数据不一致都应 fail closed。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b13-4fb70010",
+      "block_hash": "4fb70010",
+      "heading_path": "Plannotate 的第一次自我评审 > 信任边界",
+      "index": 13,
+      "legacy_block_id": "b13-4fb70010",
+      "line": 145,
+      "quote": "边界允许不允许状态",
+      "tag": "tr"
+    },
+    {
+      "anchor_id": "token-boundary",
+      "block_hash": "0322a7b0",
+      "heading_path": "Plannotate 的第一次自我评审 > 信任边界",
+      "index": 14,
+      "legacy_block_id": "b14-0322a7b0",
+      "line": 147,
+      "quote": "Tokenchrome.storage.local → api.github.complan、评论、仓库文件、sandbox已实现",
+      "tag": "tr"
+    },
+    {
+      "anchor_id": "render-boundary",
+      "block_hash": "e9159338",
+      "heading_path": "Plannotate 的第一次自我评审 > 信任边界",
+      "index": 15,
+      "legacy_block_id": "b15-e9159338",
+      "line": 148,
+      "quote": "HTML内联 CSS、data URI 图片、语义化文本script、iframe、form、远程资源、导航已实现",
+      "tag": "tr"
+    },
+    {
+      "anchor_id": "identity-boundary",
+      "block_hash": "a87b1ed4",
+      "heading_path": "Plannotate 的第一次自我评审 > 信任边界",
+      "index": 16,
+      "legacy_block_id": "b16-a87b1ed4",
+      "line": 149,
+      "quote": "IdentityGitHub actor、review timeline、thread capability伪造作者、自建身份表已实现",
+      "tag": "tr"
+    },
+    {
+      "anchor_id": "iteration-plan",
+      "block_hash": "e9429c37",
+      "heading_path": "Plannotate 的第一次自我评审 > 信任边界",
+      "index": 17,
+      "legacy_block_id": "b17-e9429c37",
+      "line": 155,
+      "quote": "下一迭代的候选项",
+      "tag": "h2"
+    },
+    {
+      "anchor_id": "b18-fe5d425a",
+      "block_hash": "fe5d425a",
+      "heading_path": "Plannotate 的第一次自我评审 > 下一迭代的候选项",
+      "index": 18,
+      "legacy_block_id": "b18-fe5d425a",
+      "line": 157,
+      "quote": "v0.1",
+      "tag": "dt"
+    },
+    {
+      "anchor_id": "milestone-v01",
+      "block_hash": "9fff2fb6",
+      "heading_path": "Plannotate 的第一次自我评审 > 下一迭代的候选项",
+      "index": 19,
+      "legacy_block_id": "b19-9fff2fb6",
+      "line": 157,
+      "quote": "完成基础 artifact 协议、GitHub thread 闭环、沙箱渲染、可复现 ZIP 和开源发布。",
+      "tag": "dd"
+    },
+    {
+      "anchor_id": "b20-fd5d40c7",
+      "block_hash": "fd5d40c7",
+      "heading_path": "Plannotate 的第一次自我评审 > 下一迭代的候选项",
+      "index": 20,
+      "legacy_block_id": "b20-fd5d40c7",
+      "line": 158,
+      "quote": "v0.2",
+      "tag": "dt"
+    },
+    {
+      "anchor_id": "milestone-v02",
+      "block_hash": "818d44d3",
+      "heading_path": "Plannotate 的第一次自我评审 > 下一迭代的候选项",
+      "index": 21,
+      "legacy_block_id": "b21-818d44d3",
+      "line": 158,
+      "quote": "根据这个 PR 的真实使用感受，决定是优先做安装体验、评论导航，还是多 plan 信息架构。",
+      "tag": "dd"
+    },
+    {
+      "anchor_id": "b22-fc5d3f34",
+      "block_hash": "fc5d3f34",
+      "heading_path": "Plannotate 的第一次自我评审 > 下一迭代的候选项",
+      "index": 22,
+      "legacy_block_id": "b22-fc5d3f34",
+      "line": 159,
+      "quote": "v0.3",
+      "tag": "dt"
+    },
+    {
+      "anchor_id": "milestone-v03",
+      "block_hash": "287ff9bc",
+      "heading_path": "Plannotate 的第一次自我评审 > 下一迭代的候选项",
+      "index": 23,
+      "legacy_block_id": "b23-287ff9bc",
+      "line": 159,
+      "quote": "在不引入后端的前提下，补齐 release 更新、权限引导和跨版本 carryover 管理。",
+      "tag": "dd"
+    },
+    {
+      "anchor_id": "release-contract",
+      "block_hash": "7bcae807",
+      "heading_path": "Plannotate 的第一次自我评审 > 下一迭代的候选项",
+      "index": 24,
+      "legacy_block_id": "b24-7bcae807",
+      "line": 161,
+      "quote": "release contract source: examples/plannotate-dogfood.html artifact: .plannotate/product/dogfood/v0001.html comments: Git",
+      "tag": "pre"
+    },
+    {
+      "anchor_id": "acceptance",
+      "block_hash": "c0424751",
+      "heading_path": "Plannotate 的第一次自我评审 > 下一迭代的候选项",
+      "index": 25,
+      "legacy_block_id": "b25-c0424751",
+      "line": 169,
+      "quote": "本 PR 的验收方式",
+      "tag": "h2"
+    },
+    {
+      "anchor_id": "accept-install",
+      "block_hash": "d9882ed0",
+      "heading_path": "Plannotate 的第一次自我评审 > 本 PR 的验收方式",
+      "index": 26,
+      "legacy_block_id": "b26-d9882ed0",
+      "line": 171,
+      "quote": "安装 ZIP 解压后的扩展，保存仅限当前仓库的 fine-grained token。",
+      "tag": "li"
+    },
+    {
+      "anchor_id": "accept-open",
+      "block_hash": "95326c34",
+      "heading_path": "Plannotate 的第一次自我评审 > 本 PR 的验收方式",
+      "index": 27,
+      "legacy_block_id": "b27-95326c34",
+      "line": 172,
+      "quote": "打开这个 PR，点击右下角 Review rendered plan，确认 v0001 可见。",
+      "tag": "li"
+    },
+    {
+      "anchor_id": "accept-comment",
+      "block_hash": "ffc9a1b6",
+      "heading_path": "Plannotate 的第一次自我评审 > 本 PR 的验收方式",
+      "index": 28,
+      "legacy_block_id": "b28-ffc9a1b6",
+      "line": 173,
+      "quote": "对本行做块级评论，再选中一小段文字发送选区评论。",
+      "tag": "li"
+    },
+    {
+      "anchor_id": "accept-resolve",
+      "block_hash": "cf779ca3",
+      "heading_path": "Plannotate 的第一次自我评审 > 本 PR 的验收方式",
+      "index": 29,
+      "legacy_block_id": "b29-cf779ca3",
+      "line": 174,
+      "quote": "回复并 resolve 预置的 dogfood thread，刷新后确认 GitHub 与扩展状态一致。",
+      "tag": "li"
+    },
+    {
+      "anchor_id": "decision-request",
+      "block_hash": "93e5227f",
+      "heading_path": "Plannotate 的第一次自我评审 > 本 PR 的验收方式",
+      "index": 30,
+      "legacy_block_id": "b30-93e5227f",
+      "line": 176,
+      "quote": "请给一个优先级判断完成体验后，请直接在这里留言：v0.2 最应该先修的一个摩擦点是什么？",
+      "tag": "blockquote"
+    }
+  ],
+  "artifact_path": ".plannotate/product/dogfood/v0001.html",
+  "artifact_sha256": "0b1cbd5fa3f249810d0aa8b1695320abe74614b8dfd902587f45a96f9c6e24ac",
+  "plan_key": "product/dogfood",
+  "schema": "plannotate.github/v1",
+  "version": 1
+}

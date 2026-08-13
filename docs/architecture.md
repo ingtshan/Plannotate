@@ -43,10 +43,14 @@ The extension manifest requests only local extension storage and access to `http
 A fine-grained token should grant the minimum repository permissions:
 
 - Contents: read-only, for manifests and artifacts;
-- Pull requests: read and write, for review threads;
+- Pull requests: read and write, for reading, creating, replying to, and deleting review comments;
 - Metadata: read-only, as required by GitHub.
 
+The same Pull requests permission covers pending-review recovery. When GitHub rejects a comment because the account already has a pending review, the viewer lists the pull request reviews, finds the caller's `PENDING` review, and either submits it (`POST .../reviews/{id}/events` with a `COMMENT` event) or deletes it (`DELETE .../reviews/{id}`) before resending the kept draft. Both actions run only on an explicit click, and deletion requires a second confirming click that states how many draft comments are removed.
+
 The token remains in `chrome.storage.local`. The plan sandbox cannot read extension storage or make GitHub requests.
+
+The extension treats review threads as versioned plan history: it reads thread state but never mutates it, so no thread-state permission path exists in the browser. GitHub may reject the GraphQL thread-state mutations for a fine-grained PAT even when review-comment writes succeed; resolving or reopening therefore stays in the CLI or the native GitHub UI, where unattended automation can use a classic PAT.
 
 The CLI reads `GITHUB_TOKEN`, `GH_TOKEN`, or `gh auth token` at invocation time. Tokens are never accepted as command-line arguments, written to disk, or included in output.
 
@@ -67,7 +71,9 @@ The parser accepts only the documented fields and validates paths, hashes, bound
 
 Explicit `data-plan-anchor` values provide the strongest identity between versions. Other blocks use a deterministic document index plus FNV-1a text hash. Selection offsets are relative to the block text.
 
-Threads stay attached to the artifact version where they were created. Unresolved older-version threads are shown as carryover context; they are never relabeled as current-version feedback.
+Media blocks are first-class anchors: the first `img`/`svg`/`canvas` inside a `<figure data-plan-anchor="...">` inherits the figure's anchor, and an SVG's direct `<title>` child becomes its human-readable comment label. Existing sidecars are immutable, so both rules apply only to versions packaged after they were introduced.
+
+Threads stay attached to the artifact version where they were created. The review rail renders every thread in one place as versioned history: current-version groups ordered by block position, general feedback, per-version history groups, and threads whose anchors no longer exist. History is never relabeled as current-version feedback, and the browser UI never changes a thread's resolved state.
 
 ## Release integrity
 

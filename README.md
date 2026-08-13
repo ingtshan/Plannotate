@@ -44,19 +44,26 @@ python3 scripts/build_extension.py
 The command creates:
 
 ```text
-dist/plannotate-v0.1.0/
-dist/plannotate-v0.1.0.zip
+dist/plannotate-v0.3.1/
+dist/plannotate-v0.3.1.zip
 dist/SHA256SUMS.txt
 ```
 
-Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select the generated `dist/plannotate-v0.1.0` directory. The ZIP contains the same auditable unpacked directory; a self-signed CRX is intentionally not produced.
+Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select the generated `dist/plannotate-v0.3.1` directory. The ZIP contains the same auditable unpacked directory; a self-signed CRX is intentionally not produced.
 
 Open the extension options and save a fine-grained GitHub personal access token limited to the repositories you review:
 
+- Resource owner: the owner of the repository being reviewed
 - Repository access: only selected repositories
 - Contents: read-only
 - Pull requests: read and write
 - Metadata: read-only (automatically required by GitHub)
+
+The options page links to GitHub's token form with the permissions prefilled and checks identity, repository, PR, and plan read access without creating a test comment. GitHub does not expose a side-effect-free write-permission probe, so verify that **Pull requests** says **Read and write**. Organization-owned repositories may also require administrator approval or SSO authorization. A fine-grained token is limited to one resource owner.
+
+The extension treats review threads as versioned plan history and never changes thread state, so the fine-grained token above is all it needs. Thread resolution stays a CLI concern: GitHub can reject the GraphQL `resolveReviewThread` and `unresolveReviewThread` mutations for a fine-grained PAT, so unattended automation that must change thread state uses a classic PAT (a broader permission surface) or the native GitHub UI.
+
+GitHub also permits only one pending review per user on a pull request. If a review is already waiting under **Files changed → Review changes**, Plannotate keeps the comment draft, detects the pending review through the REST reviews API, and offers to submit or discard it directly inside the composer before automatically resending the comment. Discarding deletes draft comments, so it requires a second confirming click and shows how many drafts are affected; a link to the native GitHub page remains as a fallback.
 
 The token stays in `chrome.storage.local`. It is sent only to `https://api.github.com` and is never placed in plan HTML, repository files, comments, or the sandbox frame.
 
@@ -75,13 +82,17 @@ git push
 
 Running `package` again after editing the source creates `v0002`; it does not modify `v0001`. Add a stable `data-plan-anchor="authentication"` attribute to important blocks when comments should carry clearly across versions. Unmarked blocks receive deterministic fallback anchors.
 
-Open the pull request and click **Review rendered plan**. Plannotate discovers changed manifests, lets you choose a version, and supports:
+Diagrams are first-class review targets. Give each `<svg>` a `<title>` child and wrap it in a `<figure data-plan-anchor="...">`: the first media block inside an anchored figure inherits the figure's anchor, and its comment label becomes `[图] <title text>` instead of a generic `[图] svg`.
+
+Open the pull request and choose the native-style **Plan review** tab. Plannotate renders an inline review workspace in the PR, discovers changed manifests, lets you choose a version, and supports:
 
 - general plan feedback;
-- block-level comments;
+- block-level comments, including SVG/image/canvas diagram blocks;
 - text-selection comments;
-- replies, resolve, reopen, and deletion when GitHub grants the capability;
-- explicit carryover display for unresolved comments on older versions.
+- replies and deletion through the API;
+- one review rail for every thread, treated as versioned plan history: current-version groups in document order, general feedback, per-version history groups, and unlocatable threads;
+- two-way linkage between plan and rail: click a commented block to jump to its cards, click a group title or history quote to jump back to the block;
+- in-place recovery when a pending review blocks comment creation.
 
 ## Use the CLI
 
@@ -106,6 +117,8 @@ The CLI resolves authentication from `GITHUB_TOKEN`, then `GH_TOKEN`, then an ex
 ```
 
 The intended loop is: `pull` -> edit source -> `package` -> commit -> reply -> resolve -> `pull` again.
+
+The CLI `resolve` and `reopen` commands use GitHub's GraphQL thread-state mutations. If GitHub rejects those mutations for a fine-grained PAT, resolve the linked thread in the native PR UI or, only for required unattended automation, use a classic PAT with `public_repo` for public repositories or `repo` for private repositories.
 
 ## Development
 

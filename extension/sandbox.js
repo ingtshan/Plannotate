@@ -1,6 +1,15 @@
 (function () {
   "use strict";
 
+  function normalizedTag(element) {
+    return String(element && element.tagName || "").toUpperCase();
+  }
+
+  if (typeof module === "object" && module.exports) {
+    module.exports = { normalizedTag };
+    return;
+  }
+
   const channel = new URLSearchParams(location.search).get("channel");
   const BLOCK_SELECTOR = "h1,h2,h3,h4,h5,h6,p,li,pre,blockquote,tr,figcaption,dt,dd,img,svg,canvas";
   const MEDIA = new Set(["IMG", "SVG", "CANVAS"]);
@@ -9,9 +18,18 @@
   const errorBox = document.getElementById("prg-error");
   const addButton = document.getElementById("prg-add");
   const selectionButton = document.getElementById("prg-selection");
+  const railThreads = document.getElementById("prg-rail-threads");
+  const railEmpty = document.getElementById("prg-rail-empty");
+  const railCount = document.getElementById("prg-rail-count");
+  const composer = document.getElementById("prg-composer");
+  const composerTitle = document.getElementById("prg-composer-title");
+  const composerQuote = document.getElementById("prg-composer-quote");
+  const composerBody = document.getElementById("prg-composer-body");
+  const composerError = document.getElementById("prg-composer-error");
+  const composerSubmit = document.getElementById("prg-composer-submit");
   const state = {
-    blocks: [], blockByElement: new WeakMap(), hover: null,
-    selection: null, threads: [], anchors: [],
+    blocks: [], blockByElement: new WeakMap(), hover: null, hoverGroup: null,
+    selection: null, threads: [], anchors: [], composerRequest: null,
   };
 
   function post(type, payload) {
@@ -101,14 +119,15 @@
   }
 
   function mediaDetails(element) {
-    if (element.tagName === "IMG") {
+    const tag = normalizedTag(element);
+    if (tag === "IMG") {
       const source = element.getAttribute("src") || "";
       const alt = element.getAttribute("alt") || "";
       const clean = source.split(/[?#]/, 1)[0];
       const filename = clean.split("/").filter(Boolean).pop() || "";
       return { input: source + "|" + alt, quote: "[图] " + (alt || filename || "img") };
     }
-    if (element.tagName === "SVG") {
+    if (tag === "SVG") {
       return {
         input: element.outerHTML.replace(/\s+/g, " ").slice(0, 512), quote: "[图] svg",
       };
@@ -120,7 +139,7 @@
 
   function scanBlocks(sidecars) {
     const elements = Array.from(planRoot.querySelectorAll(BLOCK_SELECTOR)).filter(
-      (element) => MEDIA.has(element.tagName) || Boolean(normalizeText(element.textContent))
+      (element) => MEDIA.has(normalizedTag(element)) || Boolean(normalizeText(element.textContent))
     );
     if (elements.length !== sidecars.length) {
       throw new Error(
@@ -130,14 +149,15 @@
     state.blockByElement = new WeakMap();
     state.blocks = elements.map((element, index) => {
       const sidecar = sidecars[index];
-      if (sidecar.index !== index || sidecar.tag.toUpperCase() !== element.tagName) {
+      const tag = normalizedTag(element);
+      if (sidecar.index !== index || sidecar.tag.toUpperCase() !== tag) {
         throw new Error("anchor sidecar 在第 " + index + " 个块发生结构漂移");
       }
       const rawText = element.textContent;
       const text = normalizeText(rawText);
-      const media = MEDIA.has(element.tagName) ? mediaDetails(element) : null;
+      const media = MEDIA.has(tag) ? mediaDetails(element) : null;
       const runtimeHash = fnv1a(media ? media.input : text);
-      if (element.tagName !== "SVG" && runtimeHash !== sidecar.block_hash) {
+      if (tag !== "SVG" && runtimeHash !== sidecar.block_hash) {
         throw new Error("anchor sidecar 在第 " + index + " 个块发生内容漂移");
       }
       const block = {
@@ -245,29 +265,55 @@
     return { block, start, end, text, rect: range.getBoundingClientRect() };
   }
 
-  function threadContainer(block) {
-    const existing = planRoot.querySelector(
-      '.prg-thread-container[data-anchor="' + CSS.escape(block.anchorId) + '"]'
-    );
-    if (existing) return existing;
+  function focusBlock(block) {
+    block.element.scrollIntoView({ behavior: "smooth", block: "center" });
+    block.element.classList.add("prg-focus-pulse");
+    setTimeout(() => block.element.classList.remove("prg-focus-pulse"), 900);
+  }
+
+  function blockByAnchor(anchorId, blockHash) {
+    return state.blocks.find((item) => item.anchorId === anchorId)
+      || state.blocks.find((item) => item.hash === blockHash);
+  }
+
+  function staticGroup(title) {
+    const group = document.createElement("section");
+    group.className = "prg-thread-group prg-ui";
+    group.appendChild(textElement("div", "prg-thread-group-title", title));
     const container = document.createElement("div");
     container.className = "prg-thread-container prg-ui";
-    container.dataset.anchor = block.anchorId;
-    if (block.element.tagName === "TR" || block.element.closest("tr") && block.media) {
-      const row = block.element.tagName === "TR" ? block.element : block.element.closest("tr");
-      const reviewRow = document.createElement("tr");
-      reviewRow.className = "prg-thread-row prg-ui";
-      const cell = document.createElement("td");
-      cell.colSpan = Math.max(1, row.cells.length);
-      cell.appendChild(container);
-      reviewRow.appendChild(cell);
-      row.insertAdjacentElement("afterend", reviewRow);
-    } else {
-      let host = block.element;
-      if (block.media) host = block.element.closest("figure,p,li,section,article,div") || host;
-      host.insertAdjacentElement("afterend", container);
-    }
+    group.appendChild(container);
+    railThreads.appendChild(group);
     return container;
+  }
+
+  function blockGroup(block) {
+    const group = document.createElement("section");
+    group.className = "prg-thread-group prg-ui";
+    group.dataset.anchor = block.anchorId;
+    const heading = textElement("button", "prg-thread-group-link", block.quote);
+    heading.type = "button";
+    heading.title = "回到原文位置";
+    heading.addEventListener("click", () => focusBlock(block));
+    group.addEventListener("mouseenter", () => block.element.classList.add("prg-hover"));
+    group.addEventListener("mouseleave", () => block.element.classList.remove("prg-hover"));
+    const container = document.createElement("div");
+    container.className = "prg-thread-container prg-ui";
+    group.append(heading, container);
+    railThreads.appendChild(group);
+    return container;
+  }
+
+  function groupOfBlock(block) {
+    return railThreads.querySelector(
+      '.prg-thread-group[data-anchor="' + CSS.escape(block.anchorId) + '"]'
+    );
+  }
+
+  function focusGroup(group) {
+    group.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    group.classList.add("prg-group-flash");
+    setTimeout(() => group.classList.remove("prg-group-flash"), 900);
   }
 
   function author(comment) {
@@ -288,6 +334,29 @@
     return button;
   }
 
+  function confirmButton(label, warning, action) {
+    const button = textElement("button", "", label);
+    button.type = "button";
+    let armed = false;
+    const disarm = () => {
+      armed = false;
+      button.textContent = label;
+      button.classList.remove("prg-danger");
+    };
+    button.addEventListener("click", () => {
+      if (!armed) {
+        armed = true;
+        button.textContent = warning;
+        button.classList.add("prg-danger");
+        setTimeout(() => { if (armed) disarm(); }, 5000);
+        return;
+      }
+      disarm();
+      action();
+    });
+    return button;
+  }
+
   function threadHeader(record) {
     const header = document.createElement("header");
     header.className = "prg-thread-header";
@@ -295,20 +364,31 @@
       textElement("span", "prg-thread-author", "@" + author(record.root)),
       textElement(
         "span", "prg-thread-meta",
-        (record.isResolved ? "✓ 已解决" : "未解决") + " · "
-          + String(record.root.createdAt || "").slice(0, 16).replace("T", " ")
-        )
+        String(record.root.createdAt || "").slice(0, 16).replace("T", " ")
+      )
     );
     return header;
   }
 
-  function threadQuote(metadata) {
-    if (metadata.general) return null;
-    const quote = textElement("div", "prg-thread-quote", "块：" + metadata.quote);
+  function threadQuote(record, withContext) {
+    const metadata = record.metadata;
+    const context = withContext
+      ? (metadata.general ? "总体意见" : "块：" + metadata.quote) : "";
+    if (!context && !metadata.selection) return null;
+    const quote = textElement("div", "prg-thread-quote", context);
     if (metadata.selection) {
-      quote.append(" · ", textElement(
+      if (context) quote.append(" · ");
+      quote.append("选区：", textElement(
         "span", "prg-thread-highlight", "“" + metadata.selection.text + "”"
       ));
+    }
+    if (withContext && !metadata.general) {
+      const block = blockByAnchor(metadata.anchor_id, metadata.block_hash);
+      if (block) {
+        quote.classList.add("prg-thread-quote-link");
+        quote.title = "回到原文位置";
+        quote.addEventListener("click", () => focusBlock(block));
+      }
     }
     return quote;
   }
@@ -326,11 +406,15 @@
   }
 
   function threadActions(record) {
+    if (!record.permissions.reply && !record.permissions.delete) return null;
     const actions = document.createElement("div");
     actions.className = "prg-thread-actions";
+    const buttons = document.createElement("div");
+    buttons.className = "prg-thread-buttons";
     if (record.permissions.reply) {
       const input = document.createElement("textarea");
-      input.rows = 1;
+      input.rows = 2;
+      input.maxLength = 4000;
       input.placeholder = "回复…";
       const replyButton = actionButton("回复", () => {
         if (!input.value.trim()) return;
@@ -338,38 +422,30 @@
         input.disabled = true;
         replyButton.disabled = true;
       });
-      actions.append(input, replyButton);
-    }
-    if (!record.isResolved && record.permissions.resolve) {
-      actions.appendChild(actionButton("解决", () => post(
-        "resolve", { threadId: record.threadId }
-      )));
-    }
-    if (record.isResolved && record.permissions.reopen) {
-      actions.appendChild(actionButton("重开", () => post(
-        "reopen", { threadId: record.threadId }
-      )));
+      actions.appendChild(input);
+      buttons.appendChild(replyButton);
     }
     if (record.permissions.delete) {
-      actions.appendChild(actionButton("删除", () => {
-        if (confirm("删除此 GitHub review comment？")) {
-          post("delete", { threadId: record.threadId });
-        }
-      }));
+      buttons.appendChild(confirmButton(
+        "删除", "确认删除该 GitHub comment？",
+        () => post("delete", { threadId: record.threadId })
+      ));
     }
+    actions.appendChild(buttons);
     return actions;
   }
 
-  function renderThread(record) {
+  function renderThread(record, withContext) {
     const card = document.createElement("article");
-    card.className = "prg-thread" + (record.isResolved ? " prg-resolved" : "");
+    card.className = "prg-thread";
     card.id = "prg-thread-" + record.threadId;
     card.appendChild(threadHeader(record));
-    const quote = threadQuote(record.metadata);
+    const quote = threadQuote(record, withContext);
     if (quote) card.appendChild(quote);
     card.appendChild(textElement("div", "prg-thread-body", record.body));
     appendReplies(card, record);
-    card.appendChild(threadActions(record));
+    const actions = threadActions(record);
+    if (actions) card.appendChild(actions);
     return card;
   }
 
@@ -386,49 +462,66 @@
       error = textElement("div", "prg-thread-error", "");
       card.appendChild(error);
     }
-    error.textContent = message;
+    error.replaceChildren(document.createTextNode(message));
     card.querySelectorAll("textarea,button").forEach((control) => {
       control.disabled = false;
     });
   }
 
+  function appendCard(container, block, record, withContext) {
+    const card = renderThread(record, withContext);
+    const aligned = alignedSelection(block, record.metadata.selection);
+    if (record.metadata.selection && !aligned) {
+      card.querySelector(".prg-thread-quote").appendChild(
+        textElement("span", "prg-stale", " · 选区已失效")
+      );
+    } else if (aligned) {
+      wrapRange(block, aligned.start, aligned.end, record.threadId);
+    }
+    container.appendChild(card);
+  }
+
   function renderThreads(records) {
     clearMarks();
-    planRoot.querySelectorAll(".prg-thread-container,.prg-thread-row")
-      .forEach((element) => element.remove());
-    state.blocks.forEach((block) => block.element.classList.remove("prg-has-open"));
-    const general = records.filter((item) => item.metadata.general);
-    const generalSection = document.getElementById("prg-general");
-    generalSection.hidden = false;
-    document.getElementById("prg-general-threads").replaceChildren(
-      ...general.map(renderThread)
-    );
+    railThreads.replaceChildren();
+    state.blocks.forEach((block) => block.element.classList.remove("prg-has-threads"));
+    const current = records.filter((item) => item.current);
+    const history = records.filter((item) => !item.current);
+    const general = current.filter((item) => item.metadata.general);
     const orphans = [];
-    records.filter((item) => !item.metadata.general).forEach((record) => {
-      const metadata = record.metadata;
-      const block = state.blocks.find((item) => item.anchorId === metadata.anchor_id)
-        || state.blocks.find((item) => item.hash === metadata.block_hash);
+    if (general.length) {
+      const container = staticGroup("总体意见");
+      general.forEach((record) => container.appendChild(renderThread(record, false)));
+    }
+    const byBlock = new Map();
+    current.filter((item) => !item.metadata.general).forEach((record) => {
+      const block = blockByAnchor(record.metadata.anchor_id, record.metadata.block_hash);
       if (!block) {
         orphans.push(record);
         return;
       }
-      if (!record.isResolved) block.element.classList.add("prg-has-open");
-      const card = renderThread(record);
-      const aligned = alignedSelection(block, metadata.selection);
-      if (metadata.selection && !aligned) {
-        card.querySelector(".prg-thread-quote").appendChild(
-          textElement("span", "prg-stale", " · 选区已失效")
-        );
-      } else if (aligned) {
-        wrapRange(block, aligned.start, aligned.end, record.threadId);
-      }
-      threadContainer(block).appendChild(card);
+      if (!byBlock.has(block.index)) byBlock.set(block.index, { block, records: [] });
+      byBlock.get(block.index).records.push(record);
     });
-    const orphanSection = document.getElementById("prg-orphans");
-    orphanSection.hidden = !orphans.length;
-    document.getElementById("prg-orphan-threads").replaceChildren(
-      ...orphans.map(renderThread)
-    );
+    Array.from(byBlock.keys()).sort((a, b) => a - b).forEach((index) => {
+      const entry = byBlock.get(index);
+      entry.block.element.classList.add("prg-has-threads");
+      const container = blockGroup(entry.block);
+      entry.records.forEach((record) => appendCard(container, entry.block, record, false));
+    });
+    Array.from(new Set(history.map((item) => item.metadata.version)))
+      .sort((a, b) => b - a)
+      .forEach((version) => {
+        const container = staticGroup("历史 · v" + String(version).padStart(4, "0"));
+        history.filter((item) => item.metadata.version === version)
+          .forEach((record) => container.appendChild(renderThread(record, true)));
+      });
+    if (orphans.length) {
+      const container = staticGroup("无法定位的线程");
+      orphans.forEach((record) => container.appendChild(renderThread(record, true)));
+    }
+    railCount.textContent = "当前 " + current.length + " · 历史 " + history.length;
+    railEmpty.hidden = Boolean(current.length + history.length);
   }
 
   function positionButton(button, rect, left) {
@@ -437,23 +530,39 @@
     button.style.top = Math.max(4, rect.top + scrollY) + "px";
   }
 
-  planRoot.addEventListener("mouseover", (event) => {
+  function blockFromEvent(event) {
     let element = event.target;
     while (element && element !== planRoot && !state.blockByElement.has(element)) {
       element = element.parentElement;
     }
-    const block = element && state.blockByElement.get(element);
+    return element ? state.blockByElement.get(element) : undefined;
+  }
+
+  planRoot.addEventListener("mouseover", (event) => {
+    const block = blockFromEvent(event);
     if (!block) return;
     if (state.hover) state.hover.element.classList.remove("prg-hover");
+    if (state.hoverGroup) state.hoverGroup.classList.remove("prg-group-hover");
     state.hover = block;
     block.element.classList.add("prg-hover");
+    state.hoverGroup = groupOfBlock(block);
+    if (state.hoverGroup) state.hoverGroup.classList.add("prg-group-hover");
     const rect = block.element.getBoundingClientRect();
     positionButton(addButton, rect, rect.left - 34);
   });
 
+  planRoot.addEventListener("click", (event) => {
+    const block = blockFromEvent(event);
+    if (!block) return;
+    const selection = getSelection();
+    if (selection && !selection.isCollapsed) return;
+    const group = groupOfBlock(block);
+    if (group) focusGroup(group);
+  });
+
   addButton.addEventListener("click", () => {
     if (!state.hover) return;
-    post("compose", { general: false, anchor: serializableBlock(state.hover), selection: null });
+    openComposer({ general: false, anchor: serializableBlock(state.hover), selection: null });
   });
 
   function serializableBlock(block) {
@@ -476,7 +585,7 @@
   selectionButton.addEventListener("click", () => {
     const captured = state.selection;
     if (!captured) return;
-    post("compose", {
+    openComposer({
       general: false,
       anchor: serializableBlock(captured.block),
       selection: { start: captured.start, end: captured.end, text: captured.text },
@@ -484,8 +593,78 @@
     selectionButton.hidden = true;
   });
 
-  document.getElementById("prg-general-add").addEventListener("click", () => {
-    post("compose", { general: true, anchor: null, selection: null });
+  document.getElementById("prg-rail-general").addEventListener("click", () => {
+    openComposer({ general: true, anchor: null, selection: null });
+  });
+
+  function openComposer(request) {
+    state.composerRequest = request;
+    composerTitle.textContent = request.general ? "发表总体意见" : "评论此处";
+    const selection = request.selection && " · 选区：“" + request.selection.text + "”";
+    composerQuote.textContent = request.general
+      ? "针对当前 plan 版本"
+      : "块：" + request.anchor.quote + (selection || "");
+    composerBody.value = "";
+    composerError.textContent = "";
+    composer.hidden = false;
+    composerBody.focus();
+  }
+
+  function closeComposer() {
+    state.composerRequest = null;
+    composer.hidden = true;
+    composerError.textContent = "";
+  }
+
+  function setComposerBusy(busy) {
+    composerBody.disabled = busy;
+    composerSubmit.disabled = busy;
+  }
+
+  function startRecovery(mode) {
+    if (!state.composerRequest) return;
+    post("pending-review-recover", {
+      mode,
+      request: state.composerRequest,
+      body: composerBody.value.trim(),
+    });
+    composerError.replaceChildren(
+      document.createTextNode("正在处理 pending review 并重发评论…")
+    );
+    setComposerBusy(true);
+  }
+
+  function showComposerError(message, recovery) {
+    composerError.replaceChildren(document.createTextNode(message));
+    if (!recovery || recovery.kind !== "pending-review") return;
+    const actions = document.createElement("div");
+    actions.className = "prg-composer-recovery";
+    if (recovery.found) {
+      actions.appendChild(actionButton(
+        "提交 pending review 并重发", () => startRecovery("submit")
+      ));
+      actions.appendChild(confirmButton(
+        "丢弃 pending review 并重发",
+        "确认丢弃 " + recovery.comments + " 条草稿？",
+        () => startRecovery("discard")
+      ));
+    }
+    actions.appendChild(actionButton(
+      "在 GitHub 查看", () => post("open-pending-review")
+    ));
+    composerError.appendChild(actions);
+  }
+
+  composerSubmit.addEventListener("click", () => {
+    if (!state.composerRequest || !composerBody.value.trim()) return;
+    post("comment", {
+      request: state.composerRequest,
+      body: composerBody.value.trim(),
+    });
+    setComposerBusy(true);
+  });
+  ["prg-composer-close", "prg-composer-cancel"].forEach((id) => {
+    document.getElementById(id).addEventListener("click", closeComposer);
   });
 
   window.addEventListener("message", (event) => {
@@ -496,6 +675,15 @@
       showThreadError(message.threadId, message.message || "GitHub 操作失败");
       return;
     }
+    if (message.type === "compose-error") {
+      showComposerError(message.message || "GitHub 操作失败", message.recovery);
+      setComposerBusy(false);
+      return;
+    }
+    if (message.type === "open-composer") {
+      openComposer(message.request || { general: true, anchor: null, selection: null });
+      return;
+    }
     if (message.type !== "render") return;
     try {
       showError("");
@@ -504,6 +692,8 @@
       state.threads = message.threads || [];
       scanBlocks(state.anchors);
       renderThreads(state.threads);
+      closeComposer();
+      setComposerBusy(false);
     } catch (error) {
       showError(error.message);
       planRoot.replaceChildren();
