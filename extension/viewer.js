@@ -49,10 +49,10 @@
     elements.authPanel.hidden = true;
   }
 
-  function reportError(error, action, knownHelp) {
-    const help = knownHelp || github.errorHelp(error, ref, action);
+  function reportError(error, knownHelp) {
+    const help = knownHelp || github.errorHelp(error, ref);
     if (help) {
-      if (help.nativeFallback || help.pendingReview) hideAuthHelp();
+      if (help.pendingReview) hideAuthHelp();
       else showAuthHelp(help);
       setStatus(help.summary, true);
       return help.summary;
@@ -161,20 +161,14 @@
       threads, state.planKey, state.bundle.manifest
     ).map((record) => Object.assign({}, record, {
       current: isCurrentArtifact(record),
-      nativeThreadState: state.api.tokenKind === "fine-grained",
     }));
     sendRender();
-    const current = state.records.filter((item) => item.current);
-    const open = current.filter((item) => !item.isResolved).length;
-    const carryover = state.records.filter(
-      (item) => !item.current && !item.isResolved
-    ).length;
+    const current = state.records.filter((item) => item.current).length;
+    const history = state.records.length - current;
     setStatus(
       "已验证 " + state.bundle.version.artifact_path
-        + " · 当前版本未解决 " + open + " / " + current.length
-        + (carryover ? " · 其他版本未解决 " + carryover : "")
-        + (state.api.tokenKind === "fine-grained"
-          ? " · 解决/重开使用 GitHub 原生 review" : "")
+        + " · 当前版本 " + current + " 条评论"
+        + (history ? " · 历史 " + history + " 条" : "")
     );
     hideAuthHelp();
   }
@@ -194,25 +188,6 @@
       anchors: state.bundle.anchors.anchors,
       threads: state.records,
     }, "*");
-  }
-
-  function nativeThreadUrl(record) {
-    const commentId = record && record.root && record.root.databaseId;
-    if (!Number.isInteger(commentId) || commentId < 1) return null;
-    return "https://github.com/" + ref.owner + "/" + ref.repo + "/pull/"
-      + ref.number + "#discussion_r" + commentId;
-  }
-
-  function openNativeThread(record) {
-    const url = nativeThreadUrl(record);
-    if (!url) return setStatus("该 thread 缺少 GitHub comment id。", true);
-    if (query.get("embedded") === "1") {
-      parent.postMessage({
-        source: "plannotate-viewer", type: "open-native-thread", url,
-      }, "*");
-      return;
-    }
-    window.open(url, "_blank", "noopener");
   }
 
   function commentMetadata(request) {
@@ -248,8 +223,8 @@
       });
       await refreshThreads();
     } catch (error) {
-      const help = github.errorHelp(error, ref, "create");
-      const message = reportError(error, "create", help);
+      const help = github.errorHelp(error, ref);
+      const message = reportError(error, help);
       if (help && help.pendingReview) return describePendingRecovery(message);
       sendSandboxComposerError(message, null);
     }
@@ -279,28 +254,16 @@
       if (request && body.trim()) return createComment(request, body);
       await refreshThreads();
     } catch (error) {
-      sendSandboxComposerError(reportError(error, "create"), null);
+      sendSandboxComposerError(reportError(error), null);
     }
   }
 
-  async function mutateThread(action, record, notifySandbox) {
-    if ((action === "resolve" || action === "reopen") && record.nativeThreadState) {
-      openNativeThread(record);
-      return;
-    }
+  async function deleteThread(record) {
     try {
-      if (action === "resolve") await state.api.resolveThread(record.threadId);
-      else if (action === "reopen") await state.api.reopenThread(record.threadId);
-      else if (action === "delete") {
-        await state.api.deleteComment(ref, record.root.databaseId);
-      }
+      await state.api.deleteComment(ref, record.root.databaseId);
       await refreshThreads();
     } catch (error) {
-      const help = github.errorHelp(error, ref, action);
-      const message = reportError(error, action);
-      if (notifySandbox) sendSandboxMutationError(
-        record.threadId, message, Boolean(help && help.nativeFallback)
-      );
+      sendSandboxMutationError(record.threadId, reportError(error));
     }
   }
 
@@ -313,11 +276,11 @@
     }
   }
 
-  function sendSandboxMutationError(threadId, message, nativeFallback) {
+  function sendSandboxMutationError(threadId, message) {
     if (!state.sandboxReady) return;
     elements.iframe.contentWindow.postMessage({
       source: "plannotate-parent", channel, type: "mutation-error",
-      threadId, message, nativeFallback: Boolean(nativeFallback),
+      threadId, message,
     }, "*");
   }
 
@@ -345,9 +308,6 @@
     } else if (message.type === "reply") {
       const record = findRecord(message.threadId);
       if (record) replyInline(record, message.body || "");
-    } else if (message.type === "open-native-thread") {
-      const record = findRecord(message.threadId);
-      if (record) openNativeThread(record);
     } else if (message.type === "pending-review-recover") {
       recoverPendingReview(
         message.mode === "submit" ? "submit" : "discard",
@@ -363,9 +323,9 @@
           "_blank", "noopener"
         );
       }
-    } else if (["resolve", "reopen", "delete"].includes(message.type)) {
+    } else if (message.type === "delete") {
       const record = findRecord(message.threadId);
-      if (record) mutateThread(message.type, record, true);
+      if (record) deleteThread(record);
     }
   });
 

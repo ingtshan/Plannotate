@@ -50,7 +50,7 @@ The same Pull requests permission covers pending-review recovery. When GitHub re
 
 The token remains in `chrome.storage.local`. The plan sandbox cannot read extension storage or make GitHub requests.
 
-GitHub may reject the GraphQL thread-state mutations for a fine-grained PAT even when review-comment writes succeed. The extension detects fine-grained tokens by their documented prefix and routes resolve/reopen to the exact native GitHub discussion URL. The GitHub content script validates that the target is the current repository and pull request before navigating. Classic or OAuth tokens may use the GraphQL mutations directly; their API errors still fall back to the native thread.
+The extension treats review threads as versioned plan history: it reads thread state but never mutates it, so no thread-state permission path exists in the browser. GitHub may reject the GraphQL thread-state mutations for a fine-grained PAT even when review-comment writes succeed; resolving or reopening therefore stays in the CLI or the native GitHub UI, where unattended automation can use a classic PAT.
 
 The CLI reads `GITHUB_TOKEN`, `GH_TOKEN`, or `gh auth token` at invocation time. Tokens are never accepted as command-line arguments, written to disk, or included in output.
 
@@ -73,7 +73,7 @@ Explicit `data-plan-anchor` values provide the strongest identity between versio
 
 Media blocks are first-class anchors: the first `img`/`svg`/`canvas` inside a `<figure data-plan-anchor="...">` inherits the figure's anchor, and an SVG's direct `<title>` child becomes its human-readable comment label. Existing sidecars are immutable, so both rules apply only to versions packaged after they were introduced.
 
-Threads stay attached to the artifact version where they were created. The review rail renders every thread in one place: current-version groups, general feedback, unresolved older-version carryover (labeled with its version), and threads whose anchors no longer exist. Carryover is never relabeled as current-version feedback.
+Threads stay attached to the artifact version where they were created. The review rail renders every thread in one place as versioned history: current-version groups ordered by block position, general feedback, per-version history groups, and threads whose anchors no longer exist. History is never relabeled as current-version feedback, and the browser UI never changes a thread's resolved state.
 
 ## Release integrity
 

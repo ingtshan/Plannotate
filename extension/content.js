@@ -39,22 +39,6 @@
     }).toString();
   }
 
-  function nativeThreadUrl(value, context) {
-    if (!context || !context.owner || !context.repo || !context.pull) return null;
-    let url;
-    try {
-      url = new URL(String(value || ""));
-    } catch (_error) {
-      return null;
-    }
-    const expectedPath = "/" + context.owner + "/" + context.repo
-      + "/pull/" + context.pull;
-    if (url.protocol !== "https:" || url.hostname !== "github.com"
-        || url.pathname !== expectedPath || url.search
-        || !/^#discussion_r[1-9]\d*$/.test(url.hash)) return null;
-    return url.href;
-  }
-
   function pendingReviewUrl(context) {
     if (!context || !OWNER_PATTERN.test(String(context.owner || ""))
         || !OWNER_PATTERN.test(String(context.repo || ""))
@@ -64,7 +48,7 @@
   }
 
   if (typeof module === "object" && module.exports) {
-    module.exports = { nativeThreadUrl, pendingReviewUrl, pullContext, viewerQuery };
+    module.exports = { pendingReviewUrl, pullContext, viewerQuery };
   }
   if (typeof document === "undefined" || typeof chrome === "undefined") return;
 
@@ -265,13 +249,6 @@
     if (!frame || event.source !== frame.contentWindow
         || message.source !== "plannotate-viewer") return;
     if (message.type === "close") closeWorkspace();
-    if (message.type === "open-native-thread") {
-      const context = pullContext(location.href);
-      const target = nativeThreadUrl(message.url, context);
-      if (!target) return;
-      closeWorkspace();
-      location.assign(target);
-    }
     if (message.type === "open-pending-review") {
       const target = pendingReviewUrl(pullContext(location.href));
       if (target) chrome.runtime.sendMessage({ type: "open-pending-review", url: target });

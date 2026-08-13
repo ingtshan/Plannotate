@@ -78,18 +78,6 @@ test("turns PAT denial into repository-specific recovery steps", () => {
   assert.equal(github.permissionHelp(new Error("network failed"), {}), null);
 });
 
-test("routes denied thread state mutations to native GitHub review", () => {
-  const error = new Error("Resource not accessible by personal access token");
-  error.status = 403;
-  const help = github.permissionHelp(
-    error, { owner: "team", repo: "plans", number: 7 }, "resolve"
-  );
-  assert.equal(help.title, "GitHub 拒绝 thread 状态变更");
-  assert.equal(help.nativeFallback, true);
-  assert.equal(help.tokenUrl, undefined);
-  assert.ok(help.steps.some((item) => /GitHub 原生 review/.test(item)));
-});
-
 test("classifies token families without exposing token contents", () => {
   assert.equal(github.tokenKind("github_pat_example"), "fine-grained");
   assert.equal(github.tokenKind("ghp_example"), "classic-or-oauth");
@@ -134,7 +122,7 @@ test("turns an existing pending review conflict into actionable recovery", async
     line: 3, fileLevel: false,
   }), (error) => {
     assert.deepEqual(error.apiErrors, details);
-    const help = github.errorHelp(error, ref, "create");
+    const help = github.errorHelp(error, ref);
     assert.equal(help.title, "GitHub 已有未提交的 review");
     assert.equal(help.pendingReview, true);
     assert.match(help.summary, /评论草稿已保留/);

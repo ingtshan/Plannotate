@@ -29,7 +29,7 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
       reviewThreads(first:100,after:$after) {
         nodes {
           id isResolved isOutdated path line subjectType
-          viewerCanReply viewerCanResolve viewerCanUnresolve
+          viewerCanReply
           comments(first:100) {
             nodes {
               id databaseId body createdAt url author { login }
@@ -73,7 +73,7 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
     return "unknown";
   }
 
-  function permissionHelp(error, ref, action) {
+  function permissionHelp(error, ref) {
     const message = String(error && error.message || error || "");
     const status = Number(error && error.status) || 0;
     const repository = ref && ref.owner && ref.repo
@@ -93,18 +93,6 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
           "Repository permissions：Contents = Read-only；Pull requests = Read and write",
         ],
         tokenUrl: tokenTemplateUrl(ref && ref.owner),
-      };
-    }
-    if (action === "resolve" || action === "reopen") {
-      return {
-        title: "GitHub 拒绝 thread 状态变更",
-        summary: "GitHub 拒绝了本次 GraphQL 解决/重新打开操作；重新创建相同的 fine-grained token 通常不会修复。",
-        steps: [
-          "使用 GitHub 原生 review 完成解决或重新打开",
-          "当前推荐的 fine-grained token 仍可继续用于 plan 读取、评论创建与回复",
-          "只有必须从 CLI 自动改变状态时，才考虑权限范围更大的 classic PAT",
-        ],
-        nativeFallback: true,
       };
     }
     return {
@@ -139,8 +127,8 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
     };
   }
 
-  function errorHelp(error, ref, action) {
-    return pendingReviewHelp(error) || permissionHelp(error, ref, action);
+  function errorHelp(error, ref) {
+    return pendingReviewHelp(error) || permissionHelp(error, ref);
   }
 
   function validPlanKey(value) {
@@ -426,20 +414,6 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
       return this.graphql(query, { thread: threadId, body: commentText(body, 4000) });
     }
 
-    async resolveThread(threadId) {
-      return this.graphql(
-        "mutation Resolve($thread:ID!){resolveReviewThread(input:{threadId:$thread}){thread{id isResolved}}}",
-        { thread: threadId }
-      );
-    }
-
-    async reopenThread(threadId) {
-      return this.graphql(
-        "mutation Reopen($thread:ID!){unresolveReviewThread(input:{threadId:$thread}){thread{id isResolved}}}",
-        { thread: threadId }
-      );
-    }
-
     async deleteComment(ref, commentId) {
       if (!Number.isInteger(commentId) || commentId < 1) {
         throw new Error("comment id 非法");
@@ -564,8 +538,6 @@ query PlannotateThreads($owner:String!,$repo:String!,$number:Int!,$after:String)
         subjectType: thread.subjectType,
         permissions: {
           reply: Boolean(thread.viewerCanReply),
-          resolve: Boolean(thread.viewerCanResolve),
-          reopen: Boolean(thread.viewerCanUnresolve),
           delete: Boolean(rootComment.viewerCanDelete),
         },
         metadata: parsed.metadata,

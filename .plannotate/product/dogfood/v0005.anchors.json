@@ -1,0 +1,959 @@
+{
+  "anchors": [
+    {
+      "anchor_id": "plan-title",
+      "block_hash": "04a15064",
+      "heading_path": "",
+      "index": 0,
+      "legacy_block_id": "b0-04a15064",
+      "line": 82,
+      "quote": "把 plan review 变成 PR 里的原生工作流",
+      "tag": "h1"
+    },
+    {
+      "anchor_id": "plan-thesis",
+      "block_hash": "f5b6e110",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流",
+      "index": 1,
+      "legacy_block_id": "b1-f5b6e110",
+      "line": 83,
+      "quote": "本轮修正评审层的心智模型：plan 评论是版本化历史，不是待办——UI 移除解决/重开；块与评论卡片双向联动，rail 按文档顺序组织；信息密度为 400px rail 重新设计，杜绝截断。plan 保持原貌，GitHub 仍是唯一事实源。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "round-four-finding",
+      "block_hash": "b64dbe83",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流",
+      "index": 2,
+      "legacy_block_id": "b2-b64dbe83",
+      "line": 88,
+      "quote": "第四轮 dogfood 的三条结论",
+      "tag": "h2"
+    },
+    {
+      "anchor_id": "history-not-todo-finding",
+      "block_hash": "5e7084fe",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 第四轮 dogfood 的三条结论",
+      "index": 3,
+      "legacy_block_id": "b3-5e7084fe",
+      "line": 89,
+      "quote": "评论是版本化历史，不是待办。plan 的回应单位是下一个版本，thread 的“解决”语义与之重复。UI 移除解决/重开与“前往 GitHub 解决”；线程按“当前分组 ＋ 历史 · vNNNN”呈现，thread 状态留给 CLI 自动化",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "linkage-finding",
+      "block_hash": "90a55ee0",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 第四轮 dogfood 的三条结论",
+      "index": 4,
+      "legacy_block_id": "b4-90a55ee0",
+      "line": 90,
+      "quote": "位置与卡片必须双向联动。rail 分组按块的文档顺序排列；点击有评论的块，rail 滚动至对应组并闪烁；悬停时块与组互相高亮；组标题与历史卡片引用可回跳原块。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "density-finding",
+      "block_hash": "0c9b0a99",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 第四轮 dogfood 的三条结论",
+      "index": 5,
+      "legacy_block_id": "b5-0c9b0a99",
+      "line": 91,
+      "quote": "信息密度要为 400px rail 设计。块引用只在组标题出现一次，卡片不再重复；回复框与按钮分行排列不挤压；组标题最多两行；composer 移到 rail 左侧，不再遮挡卡片。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "review-order",
+      "block_hash": "32fde695",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 第四轮 dogfood 的三条结论",
+      "index": 6,
+      "legacy_block_id": "b6-32fde695",
+      "line": 95,
+      "quote": "建议评审顺序",
+      "tag": "h2"
+    },
+    {
+      "anchor_id": "b7-a68a327b",
+      "block_hash": "a68a327b",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 建议评审顺序",
+      "index": 7,
+      "legacy_block_id": "b7-a68a327b",
+      "line": 96,
+      "quote": "GitHub 建议给 reviewer 明确说明为什么改、改了什么、应重点看哪里。本 plan 按四个问题组织阅读，既降低人类认知负荷，也为 LLM 提供稳定的检索顺序。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "review-step-context",
+      "block_hash": "cd70829d",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 建议评审顺序",
+      "index": 8,
+      "legacy_block_id": "b8-cd70829d",
+      "line": 98,
+      "quote": "01 · Scope系统边界与唯一事实源是否正确？",
+      "tag": "li"
+    },
+    {
+      "anchor_id": "review-step-runtime",
+      "block_hash": "f4765f3f",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 建议评审顺序",
+      "index": 9,
+      "legacy_block_id": "b9-f4765f3f",
+      "line": 99,
+      "quote": "02 · Runtime读取、校验、评论的链路是否闭环？",
+      "tag": "li"
+    },
+    {
+      "anchor_id": "review-step-decisions",
+      "block_hash": "4e5be942",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 建议评审顺序",
+      "index": 10,
+      "legacy_block_id": "b10-4e5be942",
+      "line": 100,
+      "quote": "03 · Decisions选项、取舍和后果是否明确？",
+      "tag": "li"
+    },
+    {
+      "anchor_id": "review-step-quality",
+      "block_hash": "302de0f6",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 建议评审顺序",
+      "index": 11,
+      "legacy_block_id": "b11-302de0f6",
+      "line": 101,
+      "quote": "04 · Quality验收是否可测、风险是否可控？",
+      "tag": "li"
+    },
+    {
+      "anchor_id": "system-context",
+      "block_hash": "d5b46052",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 建议评审顺序",
+      "index": 12,
+      "legacy_block_id": "b12-d5b46052",
+      "line": 106,
+      "quote": "C4 L1 · 系统上下文",
+      "tag": "h2"
+    },
+    {
+      "anchor_id": "b13-81465ef6",
+      "block_hash": "81465ef6",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > C4 L1 · 系统上下文",
+      "index": 13,
+      "legacy_block_id": "b13-81465ef6",
+      "line": 107,
+      "quote": "目的：说明 Plannotate 在 GitHub 协作环境中的边界。图中每条关系均标注方向与协议；虚线代表不可信内容跨越沙箱边界。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b14-42a326f5",
+      "block_hash": "42a326f5",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > C4 L1 · 系统上下文",
+      "index": 14,
+      "legacy_block_id": "b14-42a326f5",
+      "line": 109,
+      "quote": "System Context · Plan review in GitHub PR",
+      "tag": "h3"
+    },
+    {
+      "anchor_id": "b15-d56110cb",
+      "block_hash": "d56110cb",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > C4 L1 · 系统上下文 > System Context · Plan review in GitHub P",
+      "index": 15,
+      "legacy_block_id": "b15-d56110cb",
+      "line": 109,
+      "quote": "范围是浏览器扩展和 CLI；GitHub 承担身份、仓库与 review thread 持久化。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "context-diagram",
+      "block_hash": "d3a2aa19",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > C4 L1 · 系统上下文 > System Context · Plan review in GitHub P",
+      "index": 16,
+      "legacy_block_id": "b16-d3a2aa19",
+      "line": 110,
+      "quote": "[图] Plannotate 系统上下文图",
+      "tag": "svg"
+    },
+    {
+      "anchor_id": "b17-2d3be539",
+      "block_hash": "2d3be539",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > C4 L1 · 系统上下文 > System Context · Plan review in GitHub P",
+      "index": 17,
+      "legacy_block_id": "b17-2d3be539",
+      "line": 131,
+      "quote": "图例：紫色＝人/Agent；蓝色＝本系统或外部软件系统；实线箭头＝调用或数据流，标签给出协议。",
+      "tag": "figcaption"
+    },
+    {
+      "anchor_id": "context-machine-summary",
+      "block_hash": "90ecf013",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > C4 L1 · 系统上下文 > System Context · Plan review in GitHub P",
+      "index": 18,
+      "legacy_block_id": "b18-90ecf013",
+      "line": 132,
+      "quote": "LLM-readable summary: Plannotate has two clients, Extension and CLI. Both read immutable artifacts and native review thr",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "container-architecture",
+      "block_hash": "32b4c7fb",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > C4 L1 · 系统上下文 > System Context · Plan review in GitHub P",
+      "index": 19,
+      "legacy_block_id": "b19-32b4c7fb",
+      "line": 137,
+      "quote": "C4 L2 · 扩展容器与信任边界",
+      "tag": "h2"
+    },
+    {
+      "anchor_id": "b20-bc4852db",
+      "block_hash": "bc4852db",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > C4 L2 · 扩展容器与信任边界",
+      "index": 20,
+      "legacy_block_id": "b20-bc4852db",
+      "line": 138,
+      "quote": "目的：让安全与实现 reviewer 看清哪段代码能接触 token，哪段代码只处理不可信 plan。评论 rail 与 plan 视觉分栏，但仍保持同一 review 上下文。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b21-a66a31d5",
+      "block_hash": "a66a31d5",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > C4 L2 · 扩展容器与信任边界",
+      "index": 21,
+      "legacy_block_id": "b21-a66a31d5",
+      "line": 140,
+      "quote": "Container Diagram · Browser extension",
+      "tag": "h3"
+    },
+    {
+      "anchor_id": "b22-48482487",
+      "block_hash": "48482487",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > C4 L2 · 扩展容器与信任边界 > Container Diagram · Browser extension",
+      "index": 22,
+      "legacy_block_id": "b22-48482487",
+      "line": 140,
+      "quote": "所有 plan 内容进入 sandbox；GitHub API 只能由 extension page 调用。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "container-diagram",
+      "block_hash": "66aa4d47",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > C4 L2 · 扩展容器与信任边界 > Container Diagram · Browser extension",
+      "index": 23,
+      "legacy_block_id": "b23-66aa4d47",
+      "line": 141,
+      "quote": "[图] 浏览器扩展容器与信任边界图",
+      "tag": "svg"
+    },
+    {
+      "anchor_id": "b24-f09ab3cb",
+      "block_hash": "f09ab3cb",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > C4 L2 · 扩展容器与信任边界 > Container Diagram · Browser extension",
+      "index": 24,
+      "legacy_block_id": "b24-f09ab3cb",
+      "line": 157,
+      "quote": "图例：黄色＝不可信执行边界；绿色＝敏感本地存储；虚线橙色＝经过结构校验的跨边界消息。",
+      "tag": "figcaption"
+    },
+    {
+      "anchor_id": "container-machine-summary",
+      "block_hash": "b35dc82d",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > C4 L2 · 扩展容器与信任边界 > Container Diagram · Browser extension",
+      "index": 25,
+      "legacy_block_id": "b25-b35dc82d",
+      "line": 158,
+      "quote": "Invariant: plan HTML never gains GitHub credentials or network access. Review UI is a sibling rail, not injected into th",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "review-runtime",
+      "block_hash": "895795c4",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > C4 L2 · 扩展容器与信任边界 > Container Diagram · Browser extension",
+      "index": 26,
+      "legacy_block_id": "b26-895795c4",
+      "line": 163,
+      "quote": "Runtime · 打开与评论时序",
+      "tag": "h2"
+    },
+    {
+      "anchor_id": "b27-2aa56b1c",
+      "block_hash": "2aa56b1c",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > Runtime · 打开与评论时序",
+      "index": 27,
+      "legacy_block_id": "b27-2aa56b1c",
+      "line": 164,
+      "quote": "C4 静态图之外补一个关键运行场景：Reviewer 从 PR 进入 plan review，查看器校验 artifact，再把评论写回 GitHub。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b28-585607d8",
+      "block_hash": "585607d8",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > Runtime · 打开与评论时序",
+      "index": 28,
+      "legacy_block_id": "b28-585607d8",
+      "line": 166,
+      "quote": "Dynamic diagram · Review one plan block",
+      "tag": "h3"
+    },
+    {
+      "anchor_id": "b29-29741106",
+      "block_hash": "29741106",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > Runtime · 打开与评论时序 > Dynamic diagram · Review one plan block",
+      "index": 29,
+      "legacy_block_id": "b29-29741106",
+      "line": 166,
+      "quote": "编号是执行顺序；所有读取都绑定 PR head SHA。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "runtime-diagram",
+      "block_hash": "54aeae1f",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > Runtime · 打开与评论时序 > Dynamic diagram · Review one plan block",
+      "index": 30,
+      "legacy_block_id": "b30-54aeae1f",
+      "line": 167,
+      "quote": "[图] Plan review 运行时序图",
+      "tag": "svg"
+    },
+    {
+      "anchor_id": "b31-f3be6f22",
+      "block_hash": "f3be6f22",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > Runtime · 打开与评论时序 > Dynamic diagram · Review one plan block",
+      "index": 31,
+      "legacy_block_id": "b31-f3be6f22",
+      "line": 181,
+      "quote": "失败策略：任一 SHA、路径、anchor 数量或 metadata 不一致时停止渲染/写入，并在动作附近显示错误。第 8 步若因已有 pending review 被 GitHub 422 拒绝，viewer 经 REST 检测该 rev",
+      "tag": "figcaption"
+    },
+    {
+      "anchor_id": "architecture-decisions",
+      "block_hash": "90d8e0bd",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > Runtime · 打开与评论时序 > Dynamic diagram · Review one plan block",
+      "index": 32,
+      "legacy_block_id": "b32-90d8e0bd",
+      "line": 186,
+      "quote": "架构决策记录",
+      "tag": "h2"
+    },
+    {
+      "anchor_id": "b33-1fe73b64",
+      "block_hash": "1fe73b64",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录",
+      "index": 33,
+      "legacy_block_id": "b33-1fe73b64",
+      "line": 187,
+      "quote": "每条决策都包含上下文、选择与后果，避免只留下“用了什么”却没有“为什么”。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b34-12086e75",
+      "block_hash": "12086e75",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录",
+      "index": 34,
+      "legacy_block_id": "b34-12086e75",
+      "line": 189,
+      "quote": "ADR-01 · PR 内嵌工作区",
+      "tag": "h3"
+    },
+    {
+      "anchor_id": "b35-364af0a1",
+      "block_hash": "364af0a1",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-01 · PR 内嵌工作区",
+      "index": 35,
+      "legacy_block_id": "b35-364af0a1",
+      "line": 189,
+      "quote": "Context: 新标签页丢失 PR 导航上下文。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b36-de033c49",
+      "block_hash": "de033c49",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-01 · PR 内嵌工作区",
+      "index": 36,
+      "legacy_block_id": "b36-de033c49",
+      "line": 189,
+      "quote": "Decision: 在原生 tab 列加入 Plan review，内容区切换为 extension iframe。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b37-09383017",
+      "block_hash": "09383017",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-01 · PR 内嵌工作区",
+      "index": 37,
+      "legacy_block_id": "b37-09383017",
+      "line": 189,
+      "quote": "Consequence: 更像 Files changed；需容忍 GitHub DOM 演进。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b38-e6905dcb",
+      "block_hash": "e6905dcb",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-01 · PR 内嵌工作区",
+      "index": 38,
+      "legacy_block_id": "b38-e6905dcb",
+      "line": 190,
+      "quote": "ADR-02 · 评论独立 rail",
+      "tag": "h3"
+    },
+    {
+      "anchor_id": "b39-1157da41",
+      "block_hash": "1157da41",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-02 · 评论独立 rail",
+      "index": 39,
+      "legacy_block_id": "b39-1157da41",
+      "line": 190,
+      "quote": "Context: inline cards 会改动 plan 网格和表格。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b40-ef8497d8",
+      "block_hash": "ef8497d8",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-02 · 评论独立 rail",
+      "index": 40,
+      "legacy_block_id": "b40-ef8497d8",
+      "line": 190,
+      "quote": "Decision: plan DOM 只加高亮 class，线程卡统一进入右侧 rail。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b41-26f23e92",
+      "block_hash": "26f23e92",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-02 · 评论独立 rail",
+      "index": 41,
+      "legacy_block_id": "b41-26f23e92",
+      "line": 190,
+      "quote": "Consequence: 保真度提高；窄屏改为上下堆叠。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b42-39a5f9c3",
+      "block_hash": "39a5f9c3",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-02 · 评论独立 rail",
+      "index": 42,
+      "legacy_block_id": "b42-39a5f9c3",
+      "line": 191,
+      "quote": "ADR-03 · 自包含语义 SVG",
+      "tag": "h3"
+    },
+    {
+      "anchor_id": "b43-a9d3fd71",
+      "block_hash": "a9d3fd71",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-03 · 自包含语义 SVG",
+      "index": 43,
+      "legacy_block_id": "b43-a9d3fd71",
+      "line": 191,
+      "quote": "Context: 远程 Mermaid/图片破坏离线与安全边界。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b44-c1c042ef",
+      "block_hash": "c1c042ef",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-03 · 自包含语义 SVG",
+      "index": 44,
+      "legacy_block_id": "b44-c1c042ef",
+      "line": 191,
+      "quote": "Decision: 图表使用内联 SVG + title/desc + 图例 + 文本摘要。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b45-a96b2a83",
+      "block_hash": "a96b2a83",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-03 · 自包含语义 SVG",
+      "index": 45,
+      "legacy_block_id": "b45-a96b2a83",
+      "line": 191,
+      "quote": "Consequence: 人类和 LLM 都可读；作者需维护图与文字一致。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b46-9fa892e9",
+      "block_hash": "9fa892e9",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-03 · 自包含语义 SVG",
+      "index": 46,
+      "legacy_block_id": "b46-9fa892e9",
+      "line": 192,
+      "quote": "ADR-04 · pending review 原地恢复",
+      "tag": "h3"
+    },
+    {
+      "anchor_id": "b47-cb0f4983",
+      "block_hash": "cb0f4983",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-04 · pending review 原地恢复",
+      "index": 47,
+      "legacy_block_id": "b47-cb0f4983",
+      "line": 192,
+      "quote": "Context: GitHub 限制同账号每 PR 一个 pending review，评论创建返回 422。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b48-663ccd13",
+      "block_hash": "663ccd13",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-04 · pending review 原地恢复",
+      "index": 48,
+      "legacy_block_id": "b48-663ccd13",
+      "line": 192,
+      "quote": "Decision: viewer 用 REST reviews API 检测冲突，composer 内提供“提交并重发”“丢弃并重发”，丢弃需两步确认；保留 GitHub 页面兜底。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b49-506ca266",
+      "block_hash": "506ca266",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-04 · pending review 原地恢复",
+      "index": 49,
+      "legacy_block_id": "b49-506ca266",
+      "line": 192,
+      "quote": "Consequence: 评审者不离开 Plan review；丢弃是破坏性操作，必须显式确认。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b50-b25f78f9",
+      "block_hash": "b25f78f9",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-04 · pending review 原地恢复",
+      "index": 50,
+      "legacy_block_id": "b50-b25f78f9",
+      "line": 193,
+      "quote": "ADR-05 · rail 承载全部线程",
+      "tag": "h3"
+    },
+    {
+      "anchor_id": "b51-25b92dd1",
+      "block_hash": "25b92dd1",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-05 · rail 承载全部线程",
+      "index": 51,
+      "legacy_block_id": "b51-25b92dd1",
+      "line": 193,
+      "quote": "Context: v0.2 的历史版本线程渲染在 viewer 顶部，与 rail 双轨维护。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b52-85a85762",
+      "block_hash": "85a85762",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-05 · rail 承载全部线程",
+      "index": 52,
+      "legacy_block_id": "b52-85a85762",
+      "line": 193,
+      "quote": "Decision: 当前版本、总体意见、历史未解决与无法定位线程统一由 sandbox rail 分组渲染，viewer 只负责编排与 GitHub API。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b53-06e93d2d",
+      "block_hash": "06e93d2d",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-05 · rail 承载全部线程",
+      "index": 53,
+      "legacy_block_id": "b53-06e93d2d",
+      "line": 193,
+      "quote": "Consequence: 单一渲染路径；rail 需要清晰的分组标题与版本徽标。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b54-56c7bb75",
+      "block_hash": "56c7bb75",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-05 · rail 承载全部线程",
+      "index": 54,
+      "legacy_block_id": "b54-56c7bb75",
+      "line": 194,
+      "quote": "ADR-06 · 评论即历史",
+      "tag": "h3"
+    },
+    {
+      "anchor_id": "b55-efa5536f",
+      "block_hash": "efa5536f",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-06 · 评论即历史",
+      "index": 55,
+      "legacy_block_id": "b55-efa5536f",
+      "line": 194,
+      "quote": "Context: GitHub review thread 自带 resolve 状态，但 plan 评论的回应单位是下一个版本。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b56-13db920c",
+      "block_hash": "13db920c",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-06 · 评论即历史",
+      "index": 56,
+      "legacy_block_id": "b56-13db920c",
+      "line": 194,
+      "quote": "Decision: 扩展 UI 不提供解决/重开/前往 GitHub；线程按版本分组为历史；CLI 保留 resolve/reopen 供自动化。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b57-e6b58529",
+      "block_hash": "e6b58529",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-06 · 评论即历史",
+      "index": 57,
+      "legacy_block_id": "b57-e6b58529",
+      "line": 194,
+      "quote": "Consequence: UI 聚焦阅读与回复；resolve 状态仍在 GitHub，只是不再驱动界面。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b58-df10ef19",
+      "block_hash": "df10ef19",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-06 · 评论即历史",
+      "index": 58,
+      "legacy_block_id": "b58-df10ef19",
+      "line": 195,
+      "quote": "ADR-07 · 块与卡片双向联动",
+      "tag": "h3"
+    },
+    {
+      "anchor_id": "b59-2a532641",
+      "block_hash": "2a532641",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-07 · 块与卡片双向联动",
+      "index": 59,
+      "legacy_block_id": "b59-2a532641",
+      "line": 195,
+      "quote": "Context: 只有卡片到块的单向跳转，评审时对不上号。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b60-884acc41",
+      "block_hash": "884acc41",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-07 · 块与卡片双向联动",
+      "index": 60,
+      "legacy_block_id": "b60-884acc41",
+      "line": 195,
+      "quote": "Decision: rail 组按文档顺序排序并与块以 anchor 一一对应；块的点击/悬停与组互相滚动、高亮；历史卡片在锚点存活时可回跳。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b61-aa009656",
+      "block_hash": "aa009656",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-07 · 块与卡片双向联动",
+      "index": 61,
+      "legacy_block_id": "b61-aa009656",
+      "line": 195,
+      "quote": "Consequence: 多一层 DOM 事件绑定；联动只读不改 plan DOM 结构。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "quality-scenarios",
+      "block_hash": "9cd68e1d",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 架构决策记录 > ADR-07 · 块与卡片双向联动",
+      "index": 62,
+      "legacy_block_id": "b62-9cd68e1d",
+      "line": 200,
+      "quote": "质量场景与验收",
+      "tag": "h2"
+    },
+    {
+      "anchor_id": "b63-89e532a9",
+      "block_hash": "89e532a9",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 质量场景与验收",
+      "index": 63,
+      "legacy_block_id": "b63-89e532a9",
+      "line": 201,
+      "quote": "质量目标必须落成可观察场景。下表覆盖使用、变化与失败三类关键情境。",
+      "tag": "p"
+    },
+    {
+      "anchor_id": "b64-4deee67c",
+      "block_hash": "4deee67c",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 质量场景与验收",
+      "index": 64,
+      "legacy_block_id": "b64-4deee67c",
+      "line": 203,
+      "quote": "场景刺激期望响应可测标准",
+      "tag": "tr"
+    },
+    {
+      "anchor_id": "quality-native",
+      "block_hash": "e8feb37e",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 质量场景与验收",
+      "index": 65,
+      "legacy_block_id": "b65-e8feb37e",
+      "line": 205,
+      "quote": "原生感Reviewer 打开任意数字 PR在 PR tab 列看到 Plan review，无悬浮按钮或新标签页一次点击进入，返回 PR 一次点击",
+      "tag": "tr"
+    },
+    {
+      "anchor_id": "quality-fidelity",
+      "block_hash": "2ade1a3e",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 质量场景与验收",
+      "index": 66,
+      "legacy_block_id": "b66-2ade1a3e",
+      "line": 206,
+      "quote": "结构保真Plan 包含 grid、table、SVG评论出现/消失不改变 plan DOM 的块次序和布局渲染前后 anchor 数、块 hash、关键几何一致",
+      "tag": "tr"
+    },
+    {
+      "anchor_id": "quality-reviewability",
+      "block_hash": "eb103f81",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 质量场景与验收",
+      "index": 67,
+      "legacy_block_id": "b67-eb103f81",
+      "line": 207,
+      "quote": "可评审存在跨版本线程当前线程按文档顺序靠近上下文，历史线程按“历史 · vNNNN”分组可回复线程数量与 GitHub API 一致；卡片无解决/重开按钮",
+      "tag": "tr"
+    },
+    {
+      "anchor_id": "quality-linkage",
+      "block_hash": "2b7badd0",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 质量场景与验收",
+      "index": 68,
+      "legacy_block_id": "b68-2b7badd0",
+      "line": 208,
+      "quote": "联动点击有评论的块或组标题rail 滚动至对应组并闪烁；plan 回滚至原块并高亮；悬停互相高亮双向跳转均一次点击可达",
+      "tag": "tr"
+    },
+    {
+      "anchor_id": "quality-density",
+      "block_hash": "0dd8ff56",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 质量场景与验收",
+      "index": 69,
+      "legacy_block_id": "b69-0dd8ff56",
+      "line": 209,
+      "quote": "密度rail 固定 400px 宽块引用只在组标题出现一次；按钮独立成行；composer 不遮挡卡片无横向截断；组标题最多两行",
+      "tag": "tr"
+    },
+    {
+      "anchor_id": "quality-pending",
+      "block_hash": "40e41827",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 质量场景与验收",
+      "index": 70,
+      "legacy_block_id": "b70-40e41827",
+      "line": 210,
+      "quote": "冲突恢复发表评论时已存在 pending review草稿保留，composer 内提交或丢弃该 review 后评论自动重发422 后不丢一个字；恢复后评论出现在正确线程",
+      "tag": "tr"
+    },
+    {
+      "anchor_id": "quality-failure",
+      "block_hash": "faaf0556",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 质量场景与验收",
+      "index": 71,
+      "legacy_block_id": "b71-faaf0556",
+      "line": 211,
+      "quote": "失败关闭artifact/sidecar 被篡改不渲染、不提交评论，错误显示在相关区域所有 SHA/路径/anchor mismatch 测试拒绝",
+      "tag": "tr"
+    },
+    {
+      "anchor_id": "risks",
+      "block_hash": "8194c706",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 质量场景与验收",
+      "index": 72,
+      "legacy_block_id": "b72-8194c706",
+      "line": 217,
+      "quote": "风险、缓解与非目标",
+      "tag": "h2"
+    },
+    {
+      "anchor_id": "b73-8db7a58b",
+      "block_hash": "8db7a58b",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 风险、缓解与非目标",
+      "index": 73,
+      "legacy_block_id": "b73-8db7a58b",
+      "line": 219,
+      "quote": "风险影响缓解本轮边界",
+      "tag": "tr"
+    },
+    {
+      "anchor_id": "risk-github-dom",
+      "block_hash": "526b0b0d",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 风险、缓解与非目标",
+      "index": 74,
+      "legacy_block_id": "b74-526b0b0d",
+      "line": 221,
+      "quote": "GitHub DOM 演进tab 或挂载点消失语义 aria-label + href 组合定位；MutationObserver 重建；失配时不隐藏原内容接受有限 DOM adapter，不注入 React 私有状态",
+      "tag": "tr"
+    },
+    {
+      "anchor_id": "risk-diagram-drift",
+      "block_hash": "140aea57",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 风险、缓解与非目标",
+      "index": 75,
+      "legacy_block_id": "b75-140aea57",
+      "line": 222,
+      "quote": "图文漂移LLM/人类形成不同模型每图附机器可读摘要、图例、版本和验收；review anchor 单独定位不引入远程绘图库",
+      "tag": "tr"
+    },
+    {
+      "anchor_id": "risk-density",
+      "block_hash": "b5d15aa5",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 风险、缓解与非目标",
+      "index": 76,
+      "legacy_block_id": "b76-b5d15aa5",
+      "line": 223,
+      "quote": "信息密度过高阅读疲劳四步 review order；C4 只用 L1/L2；runtime 只记录关键场景不穷举组件/类图",
+      "tag": "tr"
+    },
+    {
+      "anchor_id": "risk-discard",
+      "block_hash": "c6869550",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 风险、缓解与非目标",
+      "index": 77,
+      "legacy_block_id": "b77-c6869550",
+      "line": 224,
+      "quote": "误丢弃 pending review删除评审者在 GitHub 起草的评论丢弃按钮两步确认并显示草稿数量；提交是默认推荐路径；保留原生页面兜底不代替用户自动丢弃，任何删除都由显式点击触发",
+      "tag": "tr"
+    },
+    {
+      "anchor_id": "delivery-plan",
+      "block_hash": "9e3fe55f",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 风险、缓解与非目标",
+      "index": 78,
+      "legacy_block_id": "b78-9e3fe55f",
+      "line": 230,
+      "quote": "交付切片",
+      "tag": "h2"
+    },
+    {
+      "anchor_id": "b79-ef0d1eb6",
+      "block_hash": "ef0d1eb6",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 交付切片",
+      "index": 79,
+      "legacy_block_id": "b79-ef0d1eb6",
+      "line": 232,
+      "quote": "Slice 1",
+      "tag": "dt"
+    },
+    {
+      "anchor_id": "slice-history",
+      "block_hash": "b3e47f05",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 交付切片",
+      "index": 80,
+      "legacy_block_id": "b80-b3e47f05",
+      "line": 232,
+      "quote": "去解决化：移除解决/重开/前往 GitHub 按钮与状态徽标，历史线程按版本分组；CLI 能力不变。",
+      "tag": "dd"
+    },
+    {
+      "anchor_id": "b81-ee0d1d23",
+      "block_hash": "ee0d1d23",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 交付切片",
+      "index": 81,
+      "legacy_block_id": "b81-ee0d1d23",
+      "line": 233,
+      "quote": "Slice 2",
+      "tag": "dt"
+    },
+    {
+      "anchor_id": "slice-linkage",
+      "block_hash": "45b6882d",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 交付切片",
+      "index": 82,
+      "legacy_block_id": "b82-45b6882d",
+      "line": 233,
+      "quote": "双向联动：rail 组按文档顺序排序，块点击/悬停与组互相高亮滚动，历史引用回跳。",
+      "tag": "dd"
+    },
+    {
+      "anchor_id": "b83-ed0d1b90",
+      "block_hash": "ed0d1b90",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 交付切片",
+      "index": 83,
+      "legacy_block_id": "b83-ed0d1b90",
+      "line": 234,
+      "quote": "Slice 3",
+      "tag": "dt"
+    },
+    {
+      "anchor_id": "slice-density",
+      "block_hash": "3c8f3e8c",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 交付切片",
+      "index": 84,
+      "legacy_block_id": "b84-3c8f3e8c",
+      "line": 234,
+      "quote": "密度：rail 400px、上下文单次呈现、按钮分行、组标题两行截断、composer 移出 rail 遮挡区。",
+      "tag": "dd"
+    },
+    {
+      "anchor_id": "b85-f40d2695",
+      "block_hash": "f40d2695",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 交付切片",
+      "index": 85,
+      "legacy_block_id": "b85-f40d2695",
+      "line": 235,
+      "quote": "Slice 4",
+      "tag": "dt"
+    },
+    {
+      "anchor_id": "slice-plan",
+      "block_hash": "0434a0c5",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 交付切片",
+      "index": 86,
+      "legacy_block_id": "b86-0434a0c5",
+      "line": 235,
+      "quote": "发布不可变 v0005，保持 v0001–v0004 哈希不变。",
+      "tag": "dd"
+    },
+    {
+      "anchor_id": "acceptance",
+      "block_hash": "9a98fced",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 交付切片",
+      "index": 87,
+      "legacy_block_id": "b87-9a98fced",
+      "line": 240,
+      "quote": "本轮验收",
+      "tag": "h2"
+    },
+    {
+      "anchor_id": "accept-history",
+      "block_hash": "2d8f8eb4",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 本轮验收",
+      "index": 88,
+      "legacy_block_id": "b88-2d8f8eb4",
+      "line": 242,
+      "quote": "线程卡片没有解决/重开/前往 GitHub 按钮与状态徽标；历史线程按“历史 · vNNNN”分组显示且可回复。",
+      "tag": "li"
+    },
+    {
+      "anchor_id": "accept-linkage",
+      "block_hash": "781e4957",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 本轮验收",
+      "index": 89,
+      "legacy_block_id": "b89-781e4957",
+      "line": 243,
+      "quote": "点击带绿边的块，rail 滚动到对应组并闪烁；点击组标题或历史卡片引用回跳并高亮原块；悬停互亮。",
+      "tag": "li"
+    },
+    {
+      "anchor_id": "accept-density",
+      "block_hash": "5218eb28",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 本轮验收",
+      "index": 90,
+      "legacy_block_id": "b90-5218eb28",
+      "line": 244,
+      "quote": "400px rail 内组标题最多两行、按钮完整可见、块引用不在卡片里重复；composer 不遮挡 rail。",
+      "tag": "li"
+    },
+    {
+      "anchor_id": "accept-pending",
+      "block_hash": "cf5c2303",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 本轮验收",
+      "index": 91,
+      "legacy_block_id": "b91-cf5c2303",
+      "line": 245,
+      "quote": "已有 pending review 时发表评论：草稿保留，composer 内提交或丢弃后评论自动重发成功。",
+      "tag": "li"
+    },
+    {
+      "anchor_id": "accept-fidelity",
+      "block_hash": "915a1e93",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 本轮验收",
+      "index": 92,
+      "legacy_block_id": "b92-915a1e93",
+      "line": 246,
+      "quote": "v0005 的三个 SVG、表格和布局保持源 HTML 原貌，评论不会插入其 DOM。",
+      "tag": "li"
+    },
+    {
+      "anchor_id": "accept-immutable",
+      "block_hash": "7fcbad23",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 本轮验收",
+      "index": 93,
+      "legacy_block_id": "b93-7fcbad23",
+      "line": 247,
+      "quote": "manifest 追加 v0005，v0001–v0004 的 HTML 和 sidecar 哈希不变。",
+      "tag": "li"
+    },
+    {
+      "anchor_id": "decision-request",
+      "block_hash": "5663480e",
+      "heading_path": "把 plan review 变成 PR 里的原生工作流 > 本轮验收",
+      "index": 94,
+      "legacy_block_id": "b94-5663480e",
+      "line": 249,
+      "quote": "请重点评审“评论即历史、无解决状态”是否符合你的评审心智？块与卡片的联动高亮、滚动手感是否自然？400px rail 下还有没有被截断或重复的内容？",
+      "tag": "blockquote"
+    }
+  ],
+  "artifact_path": ".plannotate/product/dogfood/v0005.html",
+  "artifact_sha256": "d1f2aed7459b3992e9ae0142f1098568cb313e7cbb275ee223436b809f48a5c4",
+  "plan_key": "product/dogfood",
+  "schema": "plannotate.github/v1",
+  "version": 5
+}

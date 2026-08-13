@@ -41,7 +41,8 @@ INSTALL_TEXT = """Plannotate 安装说明
 Token 最小仓库权限：Contents read、Pull requests read/write、Metadata read。
 如果 plan 能读取但评论报 403，请把 Pull requests 从 Read-only 改为 Read and write；
 组织仓库还可能需要管理员批准或 SSO 授权。
-Fine-grained token 的解决/重新打开会转到 GitHub 原生 review，不需要扩大权限。
+扩展把评论当作 plan 的版本化历史，不改变 thread 的解决状态；
+需要 resolve/reopen 时使用 CLI 或 GitHub 原生界面。
 随后打开 GitHub PR，选择 PR 导航中的 Plan review。
 """
 

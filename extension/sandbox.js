@@ -28,7 +28,7 @@
   const composerError = document.getElementById("prg-composer-error");
   const composerSubmit = document.getElementById("prg-composer-submit");
   const state = {
-    blocks: [], blockByElement: new WeakMap(), hover: null,
+    blocks: [], blockByElement: new WeakMap(), hover: null, hoverGroup: null,
     selection: null, threads: [], anchors: [], composerRequest: null,
   };
 
@@ -287,22 +287,33 @@
     return container;
   }
 
-  function threadContainer(block) {
-    let group = railThreads.querySelector(
-      '.prg-thread-group[data-anchor="' + CSS.escape(block.anchorId) + '"]'
-    );
-    if (group) return group.querySelector(".prg-thread-container");
-    group = document.createElement("section");
+  function blockGroup(block) {
+    const group = document.createElement("section");
     group.className = "prg-thread-group prg-ui";
     group.dataset.anchor = block.anchorId;
     const heading = textElement("button", "prg-thread-group-link", block.quote);
     heading.type = "button";
+    heading.title = "回到原文位置";
     heading.addEventListener("click", () => focusBlock(block));
+    group.addEventListener("mouseenter", () => block.element.classList.add("prg-hover"));
+    group.addEventListener("mouseleave", () => block.element.classList.remove("prg-hover"));
     const container = document.createElement("div");
     container.className = "prg-thread-container prg-ui";
     group.append(heading, container);
     railThreads.appendChild(group);
     return container;
+  }
+
+  function groupOfBlock(block) {
+    return railThreads.querySelector(
+      '.prg-thread-group[data-anchor="' + CSS.escape(block.anchorId) + '"]'
+    );
+  }
+
+  function focusGroup(group) {
+    group.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    group.classList.add("prg-group-flash");
+    setTimeout(() => group.classList.remove("prg-group-flash"), 900);
   }
 
   function author(comment) {
@@ -353,35 +364,29 @@
       textElement("span", "prg-thread-author", "@" + author(record.root)),
       textElement(
         "span", "prg-thread-meta",
-        (record.isResolved ? "✓ 已解决" : "未解决") + " · "
-          + String(record.root.createdAt || "").slice(0, 16).replace("T", " ")
-        )
+        String(record.root.createdAt || "").slice(0, 16).replace("T", " ")
+      )
     );
     return header;
   }
 
-  function threadQuote(record) {
+  function threadQuote(record, withContext) {
     const metadata = record.metadata;
-    const parts = [];
-    if (!record.current) {
-      parts.push("v" + String(metadata.version).padStart(4, "0"));
-    }
-    if (metadata.general) {
-      if (record.current) return null;
-      parts.push("总体意见");
-    } else {
-      parts.push("块：" + metadata.quote);
-    }
-    const quote = textElement("div", "prg-thread-quote", parts.join(" · "));
+    const context = withContext
+      ? (metadata.general ? "总体意见" : "块：" + metadata.quote) : "";
+    if (!context && !metadata.selection) return null;
+    const quote = textElement("div", "prg-thread-quote", context);
     if (metadata.selection) {
-      quote.append(" · ", textElement(
+      if (context) quote.append(" · ");
+      quote.append("选区：", textElement(
         "span", "prg-thread-highlight", "“" + metadata.selection.text + "”"
       ));
     }
-    if (!record.current && !metadata.general) {
+    if (withContext && !metadata.general) {
       const block = blockByAnchor(metadata.anchor_id, metadata.block_hash);
       if (block) {
         quote.classList.add("prg-thread-quote-link");
+        quote.title = "回到原文位置";
         quote.addEventListener("click", () => focusBlock(block));
       }
     }
@@ -401,11 +406,15 @@
   }
 
   function threadActions(record) {
+    if (!record.permissions.reply && !record.permissions.delete) return null;
     const actions = document.createElement("div");
     actions.className = "prg-thread-actions";
+    const buttons = document.createElement("div");
+    buttons.className = "prg-thread-buttons";
     if (record.permissions.reply) {
       const input = document.createElement("textarea");
-      input.rows = 1;
+      input.rows = 2;
+      input.maxLength = 4000;
       input.placeholder = "回复…";
       const replyButton = actionButton("回复", () => {
         if (!input.value.trim()) return;
@@ -413,45 +422,30 @@
         input.disabled = true;
         replyButton.disabled = true;
       });
-      actions.append(input, replyButton);
-    }
-    if (!record.isResolved && record.permissions.resolve) {
-      actions.appendChild(actionButton(
-        record.nativeThreadState ? "前往 GitHub 解决" : "解决",
-        () => post(
-          record.nativeThreadState ? "open-native-thread" : "resolve",
-          { threadId: record.threadId }
-        )
-      ));
-    }
-    if (record.isResolved && record.permissions.reopen) {
-      actions.appendChild(actionButton(
-        record.nativeThreadState ? "前往 GitHub 重开" : "重开",
-        () => post(
-          record.nativeThreadState ? "open-native-thread" : "reopen",
-          { threadId: record.threadId }
-        )
-      ));
+      actions.appendChild(input);
+      buttons.appendChild(replyButton);
     }
     if (record.permissions.delete) {
-      actions.appendChild(confirmButton(
+      buttons.appendChild(confirmButton(
         "删除", "确认删除该 GitHub comment？",
         () => post("delete", { threadId: record.threadId })
       ));
     }
+    actions.appendChild(buttons);
     return actions;
   }
 
-  function renderThread(record) {
+  function renderThread(record, withContext) {
     const card = document.createElement("article");
-    card.className = "prg-thread" + (record.isResolved ? " prg-resolved" : "");
+    card.className = "prg-thread";
     card.id = "prg-thread-" + record.threadId;
     card.appendChild(threadHeader(record));
-    const quote = threadQuote(record);
+    const quote = threadQuote(record, withContext);
     if (quote) card.appendChild(quote);
     card.appendChild(textElement("div", "prg-thread-body", record.body));
     appendReplies(card, record);
-    card.appendChild(threadActions(record));
+    const actions = threadActions(record);
+    if (actions) card.appendChild(actions);
     return card;
   }
 
@@ -460,7 +454,7 @@
     if (element) element.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
-  function showThreadError(threadId, message, nativeFallback) {
+  function showThreadError(threadId, message) {
     const card = document.getElementById("prg-thread-" + threadId);
     if (!card) return showError(message);
     let error = card.querySelector(".prg-thread-error");
@@ -469,59 +463,65 @@
       card.appendChild(error);
     }
     error.replaceChildren(document.createTextNode(message));
-    if (nativeFallback) {
-      error.appendChild(actionButton("在 GitHub 打开此线程", () => post(
-        "open-native-thread", { threadId }
-      )));
-    }
     card.querySelectorAll("textarea,button").forEach((control) => {
       control.disabled = false;
     });
   }
 
+  function appendCard(container, block, record, withContext) {
+    const card = renderThread(record, withContext);
+    const aligned = alignedSelection(block, record.metadata.selection);
+    if (record.metadata.selection && !aligned) {
+      card.querySelector(".prg-thread-quote").appendChild(
+        textElement("span", "prg-stale", " · 选区已失效")
+      );
+    } else if (aligned) {
+      wrapRange(block, aligned.start, aligned.end, record.threadId);
+    }
+    container.appendChild(card);
+  }
+
   function renderThreads(records) {
     clearMarks();
     railThreads.replaceChildren();
-    state.blocks.forEach((block) => block.element.classList.remove("prg-has-open"));
+    state.blocks.forEach((block) => block.element.classList.remove("prg-has-threads"));
     const current = records.filter((item) => item.current);
-    const carryover = records.filter((item) => !item.current && !item.isResolved);
+    const history = records.filter((item) => !item.current);
     const general = current.filter((item) => item.metadata.general);
     const orphans = [];
     if (general.length) {
       const container = staticGroup("总体意见");
-      general.forEach((record) => container.appendChild(renderThread(record)));
+      general.forEach((record) => container.appendChild(renderThread(record, false)));
     }
+    const byBlock = new Map();
     current.filter((item) => !item.metadata.general).forEach((record) => {
-      const metadata = record.metadata;
-      const block = blockByAnchor(metadata.anchor_id, metadata.block_hash);
+      const block = blockByAnchor(record.metadata.anchor_id, record.metadata.block_hash);
       if (!block) {
         orphans.push(record);
         return;
       }
-      if (!record.isResolved) block.element.classList.add("prg-has-open");
-      const card = renderThread(record);
-      const aligned = alignedSelection(block, metadata.selection);
-      if (metadata.selection && !aligned) {
-        card.querySelector(".prg-thread-quote").appendChild(
-          textElement("span", "prg-stale", " · 选区已失效")
-        );
-      } else if (aligned) {
-        wrapRange(block, aligned.start, aligned.end, record.threadId);
-      }
-      threadContainer(block).appendChild(card);
+      if (!byBlock.has(block.index)) byBlock.set(block.index, { block, records: [] });
+      byBlock.get(block.index).records.push(record);
     });
-    if (carryover.length) {
-      const container = staticGroup("其他版本未解决");
-      carryover.forEach((record) => container.appendChild(renderThread(record)));
-    }
+    Array.from(byBlock.keys()).sort((a, b) => a - b).forEach((index) => {
+      const entry = byBlock.get(index);
+      entry.block.element.classList.add("prg-has-threads");
+      const container = blockGroup(entry.block);
+      entry.records.forEach((record) => appendCard(container, entry.block, record, false));
+    });
+    Array.from(new Set(history.map((item) => item.metadata.version)))
+      .sort((a, b) => b - a)
+      .forEach((version) => {
+        const container = staticGroup("历史 · v" + String(version).padStart(4, "0"));
+        history.filter((item) => item.metadata.version === version)
+          .forEach((record) => container.appendChild(renderThread(record, true)));
+      });
     if (orphans.length) {
       const container = staticGroup("无法定位的线程");
-      orphans.forEach((record) => container.appendChild(renderThread(record)));
+      orphans.forEach((record) => container.appendChild(renderThread(record, true)));
     }
-    const open = current.filter((item) => !item.isResolved).length + carryover.length;
-    const total = current.length + carryover.length;
-    railCount.textContent = "未解决 " + open + " · 共 " + total;
-    railEmpty.hidden = Boolean(total);
+    railCount.textContent = "当前 " + current.length + " · 历史 " + history.length;
+    railEmpty.hidden = Boolean(current.length + history.length);
   }
 
   function positionButton(button, rect, left) {
@@ -530,18 +530,34 @@
     button.style.top = Math.max(4, rect.top + scrollY) + "px";
   }
 
-  planRoot.addEventListener("mouseover", (event) => {
+  function blockFromEvent(event) {
     let element = event.target;
     while (element && element !== planRoot && !state.blockByElement.has(element)) {
       element = element.parentElement;
     }
-    const block = element && state.blockByElement.get(element);
+    return element ? state.blockByElement.get(element) : undefined;
+  }
+
+  planRoot.addEventListener("mouseover", (event) => {
+    const block = blockFromEvent(event);
     if (!block) return;
     if (state.hover) state.hover.element.classList.remove("prg-hover");
+    if (state.hoverGroup) state.hoverGroup.classList.remove("prg-group-hover");
     state.hover = block;
     block.element.classList.add("prg-hover");
+    state.hoverGroup = groupOfBlock(block);
+    if (state.hoverGroup) state.hoverGroup.classList.add("prg-group-hover");
     const rect = block.element.getBoundingClientRect();
     positionButton(addButton, rect, rect.left - 34);
+  });
+
+  planRoot.addEventListener("click", (event) => {
+    const block = blockFromEvent(event);
+    if (!block) return;
+    const selection = getSelection();
+    if (selection && !selection.isCollapsed) return;
+    const group = groupOfBlock(block);
+    if (group) focusGroup(group);
   });
 
   addButton.addEventListener("click", () => {
@@ -656,10 +672,7 @@
     if (event.source !== parent || message.source !== "plannotate-parent"
         || message.channel !== channel) return;
     if (message.type === "mutation-error") {
-      showThreadError(
-        message.threadId, message.message || "GitHub 操作失败",
-        Boolean(message.nativeFallback)
-      );
+      showThreadError(message.threadId, message.message || "GitHub 操作失败");
       return;
     }
     if (message.type === "compose-error") {
